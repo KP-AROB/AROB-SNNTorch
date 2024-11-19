@@ -1,0 +1,28 @@
+variables:
+  image_size: &image_size 28
+  n_class: &n_class 10
+  
+model:
+  name: CSNN_2C
+  parameters: 
+    in_shape: !!python/tuple [1, *image_size, *image_size]
+    n_class: *n_class
+    in_features: 16
+    out_features: 32
+    beta: 0.5
+    k_size: 5
+    num_steps: 50
+
+dataset:
+  name: MNIST
+  parameters:
+    data_dir: ./data
+    image_size: *image_size
+    batch_size: 128
+
+experiment:
+  name: MNIST
+  parameters:
+    log_dir: ./logs
+    seed: 1234
+    epochs: 1
