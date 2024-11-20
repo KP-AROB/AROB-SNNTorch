@@ -2,7 +2,7 @@ import torch
 import os
 import logging
 from argparse import ArgumentParser
-from src.utils.dataloaders import load_mnist_dataloader, load_cbis_ddsm_dataloader
+from src.utils.dataloaders import load_mnist_dataloader, load_cbis_ddsm_dataloader, load_cifar_dataloader
 from torch.utils.tensorboard import SummaryWriter
 from uuid import uuid4
 from src.utils.parameters import write_params_to_file, load_parameters, instanciate_cls
@@ -10,6 +10,12 @@ from torchsummary import summary
 from src.experiment.base import BaseExperiment
 
 if __name__ == "__main__":
+
+    logging_message = "[AROB-2025-KAPTIOS]"
+    logging.basicConfig(
+        level=logging.INFO,
+        format=f'%(asctime)s - {logging_message} - %(levelname)s - %(message)s'
+    )
 
     parser = ArgumentParser()
     parser.add_argument("--params", type=str, default='./params/mnist.yaml')
@@ -19,12 +25,6 @@ if __name__ == "__main__":
     data_params = params['dataset']['parameters']
     model_params = params['model']['parameters']
     xp_params = params['experiment']['parameters']
-
-    logging_message = "[AROB-2025-KAPTIOS]"
-    logging.basicConfig(
-        level=logging.INFO,
-        format=f'%(asctime)s - {logging_message} - %(levelname)s - %(message)s'
-    )
 
     ## ========== INIT ========== ##
 
@@ -52,7 +52,10 @@ if __name__ == "__main__":
         train_dl, test_dl, n_classes = load_mnist_dataloader(
             data_params,
             gpu)
-
+    elif params['dataset']['name'] == "CIFAR10":
+        train_dl, test_dl, n_classes = load_cifar_dataloader(
+            data_params,
+            gpu)
     elif params['dataset']['name'] == "CBIS":
         train_dl, test_dl, n_classes = load_cbis_ddsm_dataloader(
             data_params,
