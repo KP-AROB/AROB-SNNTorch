@@ -1,46 +1,73 @@
 import torch
 import snntorch as snn
+from abc import ABC
 from torch import nn
 from snntorch import surrogate
-from snntorch import utils
 
 
-class CSNN_2C(object):
+class BaseCSNN(ABC):
     def __init__(self,
                  in_shape: tuple = (1, 28, 28),
                  n_class: int = 10,
-                 in_features: int = 16,
-                 out_features: int = 32,
+                 start_features: int = 16,
                  beta: float = 0.5,
                  num_steps: int = 50,
-                 k_size: int = 5,
-                 device: str = 'cuda'):
-        super().__init__()
+                 k_size: int = 5):
+        self.in_shape = in_shape
+        self.n_class = n_class
+        self.start_features = start_features
+        self.beta = beta
+        self.k_size = k_size
+        self.spike_grad = surrogate.fast_sigmoid()
+        self.device = torch.device(
+            "cuda") if torch.cuda.is_available() else torch.device("cpu")
+        self.net = None
 
-        self.num_steps = num_steps
-        spike_grad = surrogate.fast_sigmoid(slope=25)
 
-        fc_features = int(
-            (in_shape[1] - 2 * k_size + 1 * 2) / 4) - 1
+class CSNN_2C(BaseCSNN):
+    def __init__(self,
+                 in_shape: tuple = (1, 28, 28),
+                 n_class: int = 10,
+                 start_features: int = 16,
+                 beta: float = 0.5,
+                 k_size: int = 5):
+        super().__init__(in_shape, n_class, start_features, beta, k_size)
+
+        fc_features = int((in_shape[1] - 2 * k_size + 1 * 2) / 4) - 1
+
         self.net = nn.Sequential(
-            nn.Conv2d(in_shape[0], in_features, k_size),
+            nn.Conv2d(in_shape[0], start_features, k_size),
             nn.MaxPool2d(2),
-            snn.Leaky(beta=beta, spike_grad=spike_grad, init_hidden=True),
-            nn.Conv2d(in_features, out_features, k_size),
+            snn.Leaky(beta=beta, spike_grad=self.spike_grad, init_hidden=True),
+            nn.Conv2d(start_features, start_features * 2, k_size),
             nn.MaxPool2d(2),
-            snn.Leaky(beta=beta, spike_grad=spike_grad, init_hidden=True),
+            snn.Leaky(beta=beta, spike_grad=self.spike_grad, init_hidden=True),
             nn.Flatten(),
-            nn.Linear(out_features*fc_features*fc_features, n_class),
-            snn.Leaky(beta=beta, spike_grad=spike_grad, init_hidden=True, output=True)).to(device)
+            nn.Linear(start_features * 2 * fc_features**2, n_class),
+            snn.Leaky(beta=beta, spike_grad=self.spike_grad, init_hidden=True, output=True)).to(self.device)
 
-    def forward_pass(self, data):
-        mem_rec = []
-        spk_rec = []
-        utils.reset(self.net)
 
-        for _ in range(self.num_steps):
-            spk_out, mem_out = self.net(data)
-            spk_rec.append(spk_out)
-            mem_rec.append(mem_out)
+class CSNN_3C(BaseCSNN):
+    def __init__(self,
+                 in_shape: tuple = (1, 28, 28),
+                 n_class: int = 10,
+                 start_features: int = 16,
+                 beta: float = 0.5,
+                 k_size: int = 5):
+        super().__init__(in_shape, n_class, start_features, beta, k_size)
 
-        return torch.stack(spk_rec), torch.stack(mem_rec)
+        fc_features = int((in_shape[1] - 2 * k_size + 1 * 2) / 4) - 1
+
+        self.net = nn.Sequential(
+            nn.Conv2d(in_shape[0], start_features, k_size),
+            nn.MaxPool2d(2),
+            snn.Leaky(beta=beta, spike_grad=self.spike_grad, init_hidden=True),
+            nn.Conv2d(start_features, start_features*2, k_size),
+            nn.MaxPool2d(2),
+            snn.Leaky(beta=beta, spike_grad=self.spike_grad, init_hidden=True),
+            nn.Conv2d(start_features*2, start_features*4, k_size),
+            nn.MaxPool2d(2),
+            snn.Leaky(beta=beta, spike_grad=self.spike_grad, init_hidden=True),
+            nn.Flatten(),
+            nn.Linear(start_features*4*fc_features**2, n_class),
+            snn.Leaky(beta=beta, spike_grad=self.spike_grad, init_hidden=True, output=True)).to(self.device)

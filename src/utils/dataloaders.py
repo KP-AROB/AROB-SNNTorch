@@ -6,9 +6,7 @@ from torchvision import transforms
 
 
 def load_mnist_dataloader(
-        data_dir: str,
-        image_size: int,
-        batch_size: int = 16,
+        params: dict,
         gpu: bool = True):
     """
     Retrieves the MNIST Dataset and 
@@ -17,8 +15,7 @@ def load_mnist_dataloader(
     Parameters :
     ----------------
 
-    :image_size: The input image size
-    :batch_size: The batch size
+    :params: The parameter dictionary
     :gpu: Whether or not the gpu is used
 
     Returns :
@@ -27,10 +24,13 @@ def load_mnist_dataloader(
     :test_dataloader:
 
     """
+    image_size = params['image_size']
+    batch_size = params['batch_size']
+
     n_workers = gpu * 4 * torch.cuda.device_count()
 
     train_dataset = torchvision.datasets.MNIST(
-        root=data_dir,
+        root=params['data_dir'],
         train=True,
         download=True,
         transform=transforms.Compose(
@@ -38,13 +38,14 @@ def load_mnist_dataloader(
                 transforms.Resize((image_size, image_size)),
                 transforms.Grayscale(),
                 transforms.ToTensor(),
-                transforms.Normalize((0.1307,), (0.3081,)),
+                transforms.Normalize(
+                    (params['mean'],), (params['std'],)),
             ]
         ),
     )
 
     test_dataset = torchvision.datasets.MNIST(
-        root=data_dir,
+        root=params['data_dir'],
         train=False,
         download=True,
         transform=transforms.Compose(
@@ -77,3 +78,58 @@ def load_mnist_dataloader(
     n_classes = len(train_dataset.classes)
 
     return train_loader, test_loader, n_classes
+
+
+def load_cbis_ddsm_dataloader(
+        params: dict,
+        gpu: bool = True):
+
+    n_workers = gpu * 4 * torch.cuda.device_count()
+
+    train_dataset = torchvision.datasets.ImageFolder(
+        params['data_dir'] + '/train',
+        transform=transforms.Compose(
+            [
+                transforms.Grayscale(),
+                transforms.ToTensor(),
+                transforms.Normalize((params['mean'],), (params['std'],)),
+                transforms.Resize(
+                    (params['image_size'], params['image_size'])),
+            ]
+        )
+    )
+
+    test_dataset = torchvision.datasets.ImageFolder(
+        params['data_dir'] + '/test',
+        transform=transforms.Compose(
+            [
+                transforms.Grayscale(),
+                transforms.ToTensor(),
+                transforms.Normalize((params['mean'],), (params['std'],)),
+                transforms.Resize(
+                    (params['image_size'], params['image_size'])),
+            ]
+        )
+    )
+
+    n_classes = len(train_dataset.classes)
+    logging.info("Available labels in dataset : {}".format(
+        train_dataset.class_to_idx))
+
+    train_dataloader = torch.utils.data.DataLoader(
+        train_dataset,
+        batch_size=params['batch_size'],
+        shuffle=True,
+        num_workers=n_workers,
+        pin_memory=gpu,
+    )
+
+    val_dataloader = torch.utils.data.DataLoader(
+        test_dataset,
+        batch_size=params['batch_size'],
+        shuffle=True,
+        num_workers=n_workers,
+        pin_memory=gpu,
+    )
+
+    return train_dataloader, val_dataloader, n_classes

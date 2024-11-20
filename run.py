@@ -2,7 +2,7 @@ import torch
 import os
 import logging
 from argparse import ArgumentParser
-from src.utils.dataloaders import load_mnist_dataloader
+from src.utils.dataloaders import load_mnist_dataloader, load_cbis_ddsm_dataloader
 from torch.utils.tensorboard import SummaryWriter
 from uuid import uuid4
 from src.utils.parameters import write_params_to_file, load_parameters, instanciate_cls
@@ -44,15 +44,23 @@ if __name__ == "__main__":
     log_dir = os.path.join(xp_params["log_dir"], experiment_name)
     os.makedirs(log_dir, exist_ok=True)
     write_params_to_file(params, log_dir)
-    log_interval = max(100 // data_params["batch_size"], 1)
+    log_interval = max(50 // data_params["batch_size"], 1)
 
     # ========== DATALOADER ========== ##
 
-    train_dl, test_dl, n_classes = load_mnist_dataloader(
-        data_params["data_dir"],
-        data_params["image_size"],
-        data_params["batch_size"],
-        gpu)
+    if params['dataset']['name'] == "MNIST":
+        train_dl, test_dl, n_classes = load_mnist_dataloader(
+            data_params,
+            gpu)
+
+    elif params['dataset']['name'] == "CBIS":
+        train_dl, test_dl, n_classes = load_cbis_ddsm_dataloader(
+            data_params,
+            gpu)
+    else:
+        logging.error('Dataset name {} is not valid. Exiting'.format(
+            params['dataset']['name']))
+        exit()
 
     logging.info('Dataloaders successfully loaded.')
 
@@ -60,7 +68,6 @@ if __name__ == "__main__":
 
     model = instanciate_cls(
         'src.models.csnn', params['model']['name'], model_params)
-    model.net.to(DEVICE)
     summary(model.net, model_params['in_shape'])
 
     # ========== TRAINING ========== ##
@@ -68,5 +75,6 @@ if __name__ == "__main__":
     writer = SummaryWriter(log_dir=log_dir, flush_secs=60)
 
     logging.info(f'Running on device : {DEVICE}')
-    experiment = BaseExperiment(model, writer, device=DEVICE)
+    experiment = BaseExperiment(
+        model, writer, log_interval=log_interval, encoding_type=xp_params['encoding'], num_steps=xp_params['num_steps'], lr=xp_params['lr'], device=DEVICE)
     experiment.fit(train_dl, test_dl, xp_params['epochs'])

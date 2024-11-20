@@ -1,31 +1,31 @@
 variables:
-  image_size: &image_size 28
-  n_class: &n_class 10
+  image_size: &image_size 128
+  n_class: &n_class 4
   
 model:
-  name: CSNN_2C
+  name: CSNN_3C
   parameters: 
     in_shape: !!python/tuple [1, *image_size, *image_size]
     n_class: *n_class
     start_features: 16
     beta: 0.5
-    k_size: 5
+    k_size: 3
 
 dataset:
-  name: MNIST
+  name: CBIS
   parameters:
-    data_dir: ./data
+    data_dir: /home/nvidia/projects/Research/AROB-CBIS-DDSM-Preparation/data/roi-severity/
     image_size: *image_size
-    batch_size: 128
-    mean: 0.1307
-    std: 0.3081
+    batch_size: 64
+    mean: 0.5451
+    std: 0.1577
 
 experiment:
-  name: MNIST
+  name: CBIS
   parameters:
     log_dir: ./logs
     seed: 1234
-    epochs: 1
+    epochs: 10
     lr: .001
     num_steps: 50
     encoding: rate

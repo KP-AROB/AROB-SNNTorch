@@ -72,6 +72,19 @@ def load_parameters(path: str):
     return parameters
 
 
+def load_fnc(module_name: str, func_name):
+    try:
+        module_ = importlib.import_module(module_name)
+        if not hasattr(module_, func_name):
+            raise AttributeError(
+                f"Func '{func_name}' not found in module '{module_name}'")
+
+        fnc = getattr(module_, func_name)
+        return fnc
+    except Exception as e:
+        raise Exception(f"An error occurred: {e}")
+
+
 def instanciate_cls(module_name: str, class_name: str, params: dict = None):
     """Instantiate a class
 
