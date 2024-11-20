@@ -56,7 +56,9 @@ class CSNN_3C(BaseCSNN):
                  k_size: int = 5):
         super().__init__(in_shape, n_class, start_features, beta, k_size)
 
-        fc_features = int((in_shape[1] - 2 * k_size + 1 * 2) / 4) - 1
+        num_conv = 3
+        fc_features = int(
+            (in_shape[1] - num_conv * k_size + 1 * num_conv) / 2**num_conv) - 1
 
         self.net = nn.Sequential(
             nn.Conv2d(in_shape[0], start_features, k_size),
