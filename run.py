@@ -11,12 +11,6 @@ from src.experiment.base import BaseExperiment
 
 if __name__ == "__main__":
 
-    logging_message = "[AROB-2025-KAPTIOS]"
-    logging.basicConfig(
-        level=logging.INFO,
-        format=f'%(asctime)s - {logging_message} - %(levelname)s - %(message)s'
-    )
-
     parser = ArgumentParser()
     parser.add_argument("--params", type=str, default='./params/mnist.yaml')
     args = parser.parse_args()
@@ -25,6 +19,12 @@ if __name__ == "__main__":
     data_params = params['dataset']['parameters']
     model_params = params['model']['parameters']
     xp_params = params['experiment']['parameters']
+
+    logging_message = "[AROB-2025-KAPTIOS]"
+    logging.basicConfig(
+        level=logging.INFO,
+        format=f'%(asctime)s - {logging_message} - %(levelname)s - %(message)s'
+    )
 
     ## ========== INIT ========== ##
 

@@ -1,5 +1,6 @@
 import torch
 import os
+import logging
 from torch.utils.tensorboard import SummaryWriter
 from snntorch import functional as SF
 from tqdm import tqdm, trange
@@ -109,6 +110,5 @@ class BaseExperiment(object):
         with open(self.writer.log_dir + '/parameters.txt', "a") as file:
             file.write(f"\nFinal Accuracy: {final_acc}\n")
 
-        print("\n\033[32mTraining Completed.\033[0m")
-        print(
-            f"\033[32mFinal test accuracy: {final_acc}%\033[0m\n")
+        logging.info("Training Completed.")
+        logging.info("Final test accuracy: {final_acc}%")
