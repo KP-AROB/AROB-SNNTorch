@@ -16,7 +16,7 @@ dataset:
   parameters:
     data_dir: /home/nvidia/projects/Research/AROB-CBIS-DDSM-Preparation/data/roi-severity/
     image_size: *image_size
-    batch_size: 64
+    batch_size: 16
     mean: 0.5451
     std: 0.1577
 
