@@ -6,14 +6,14 @@ from .base import BaseFSNN
 
 class FCSNN(BaseFSNN):
     def __init__(self,
-                 n_input: int = 28 * 28,
+                 input_shape: tuple = (1, 28, 28),
                  n_hidden: int = 16,
                  n_output: int = 10,
                  beta: float = 0.8,
                  timesteps: int = 50,
                  encoding_type: str = None):
-        super().__init__(n_input, n_hidden, n_output, beta, timesteps, encoding_type)
-        self.fc1 = nn.Linear(n_input**2, n_hidden)
+        super().__init__(input_shape, n_hidden, n_output, beta, timesteps, encoding_type)
+        self.fc1 = nn.Linear(input_shape[1]**2, n_hidden)
         self.lif1 = snn.Leaky(beta=beta)
         self.fc2 = nn.Linear(n_hidden, n_output)
         self.lif2 = snn.Leaky(beta=beta)

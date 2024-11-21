@@ -6,7 +6,7 @@ model:
   name: FCSNN
   module_name: src.models.fsnn
   parameters: 
-    n_input: *image_size
+    input_shape: !!python/tuple [1, 28, 28]
     n_hidden: 1000
     n_output: *n_class
     beta: 0.8

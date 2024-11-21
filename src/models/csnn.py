@@ -6,21 +6,20 @@ from .base import BaseFSNN
 
 class CBIS_CSNN(BaseFSNN):
     def __init__(self,
-                 n_input: int = 1,
+                 input_shape: tuple = (1, 64, 64),
                  n_hidden: int = 16,
                  n_output: int = 2,
                  beta: float = 0.95,
                  timesteps: int = 50,
-                 image_size: int = 64,
                  encoding_type: str = None):
-        super().__init__(n_input, n_hidden, n_output, beta, timesteps, encoding_type)
+        super().__init__(input_shape, n_hidden, n_output, beta, timesteps, encoding_type)
 
         n_conv = 2
         k_size = 5
         fc_features = int(
-            (image_size - n_conv * k_size + 1 * n_conv) / 2**n_conv) - 1
+            (input_shape[1] - n_conv * k_size + 1 * n_conv) / 2**n_conv) - 1
 
-        self.conv1 = nn.Conv2d(n_input, n_hidden, k_size)
+        self.conv1 = nn.Conv2d(input_shape[0], n_hidden, k_size)
         self.lif1 = snn.Leaky(beta=beta)
 
         self.conv2 = nn.Conv2d(n_hidden, n_hidden*2, k_size)
@@ -29,7 +28,7 @@ class CBIS_CSNN(BaseFSNN):
         self.fc1 = nn.Linear(n_hidden*2 * fc_features**2, n_hidden*2)
         self.lif3 = snn.Leaky(beta=beta)
 
-        self.fc_out = nn.Linear(100, n_output)
+        self.fc_out = nn.Linear(n_hidden*2, n_output)
         self.lif_out = snn.Leaky(beta=beta)
 
         self.flatten = nn.Flatten()

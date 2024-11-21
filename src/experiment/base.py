@@ -1,10 +1,10 @@
 import torch
 import os
 import logging
+import numpy as np
 from torch.utils.tensorboard import SummaryWriter
 from snntorch import functional as SF
 from tqdm import tqdm, trange
-import numpy as np
 from snntorch import utils, spikegen
 from src.utils.parameters import load_fnc
 from abc import ABC, abstractmethod
@@ -114,3 +114,44 @@ class SNNExperiment(AbstractExperiment):
 
         logging.info("Training Completed.")
         logging.info(f"Final test accuracy: {final_acc}%")
+
+
+class BinaryClassificationExperiment(SNNExperiment):
+    def __init__(self,
+                 model,
+                 writer,
+                 log_interval,
+                 lr) -> None:
+        super().__init__(model, writer, log_interval, lr)
+        self.optimizer = torch.optim.Adam(
+            self.model.parameters(),
+            lr=lr,
+            betas=(0.9, 0.999))
+        self.criterion = torch.nn.BCELoss()
+
+    def train(self, train_loader, epoch):
+        losses = []
+        self.model.train()
+
+        with tqdm(train_loader, leave=False, desc="Running training phase") as pbar:
+            for step, (data, targets) in enumerate(train_loader):
+                data = data.to(self.device)
+                targets = targets.to(self.device)
+                self.optimizer.zero_grad()
+                spk_rec, _ = self.model(data)
+                spk_rec_sum = torch.sigmoid(spk_rec.sum(0))
+                targets_one_hot = torch.nn.functional.one_hot(
+                    targets, num_classes=2).float()
+                loss_val = self.criterion(spk_rec_sum, targets_one_hot)
+                loss_val.backward()
+                self.optimizer.step()
+                losses.append(loss_val.item())
+                global_step = (len(train_loader) * train_loader.batch_size) * \
+                    epoch + train_loader.batch_size * step
+
+                if step % self.log_interval == 0 and step > 0:
+                    self.writer.add_scalar(
+                        'loss/train', np.mean(losses), global_step=global_step)
+                pbar.set_description(
+                    f"Running training phase | loss/train : {np.mean(losses):.4f}")
+                pbar.update()

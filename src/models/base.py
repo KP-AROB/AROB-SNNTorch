@@ -5,14 +5,14 @@ from src.utils.parameters import load_fnc
 
 class BaseFSNN(ABC, torch.nn.Module):
     def __init__(self,
-                 n_input: int = 28 * 28,
+                 input_shape: tuple = (1, 28, 28),
                  n_hidden: int = 16,
                  n_output: int = 10,
                  beta: float = 0.8,
                  timesteps: int = 50,
                  encoding_type: str = None):
         super().__init__()
-        self.n_input = n_input
+        self.input_shape = input_shape
         self.n_hidden = n_hidden
         self.n_output = n_output
         self.timesteps = timesteps
