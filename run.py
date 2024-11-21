@@ -2,12 +2,11 @@ import torch
 import os
 import logging
 from argparse import ArgumentParser
-from src.utils.dataloaders import load_mnist_dataloader, load_cbis_ddsm_dataloader, load_cifar_dataloader
+from src.utils.dataloaders import load_dataloader
 from torch.utils.tensorboard import SummaryWriter
 from uuid import uuid4
 from src.utils.parameters import write_params_to_file, load_parameters, instanciate_cls
-from torchsummary import summary
-from src.experiment.base import SNNExperiment, AbstractExperiment
+from src.experiment.base import AbstractExperiment
 
 if __name__ == "__main__":
 
@@ -47,22 +46,10 @@ if __name__ == "__main__":
 
     # ========== DATALOADER ========== ##
 
-    if params['dataset']['name'] == "MNIST":
-        train_dl, test_dl, n_classes = load_mnist_dataloader(
-            data_params,
-            gpu)
-    elif params['dataset']['name'] == "CIFAR10":
-        train_dl, test_dl, n_classes = load_cifar_dataloader(
-            data_params,
-            gpu)
-    elif params['dataset']['name'] == "CBIS":
-        train_dl, test_dl, n_classes = load_cbis_ddsm_dataloader(
-            data_params,
-            gpu)
-    else:
-        logging.error('Dataset name {} is not valid. Exiting'.format(
-            params['dataset']['name']))
-        exit()
+    train_dl, test_dl = load_dataloader(
+        params['dataset']['name'],
+        data_params,
+        gpu)
 
     logging.info('Dataloaders successfully loaded.')
 

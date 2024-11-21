@@ -40,7 +40,7 @@ def check_parameters(params: dict):
             raise AssertionError(
                 base_message + 'Parameter file should contain keyword "' + p_group + '"!')
 
-        required_keywords = ['name', 'parameters']
+        required_keywords = ['name', 'module_name', 'parameters']
         for i in required_keywords:
             if i not in params[p_group].keys():
                 raise AssertionError(

@@ -3,18 +3,19 @@ variables:
   n_class: &n_class 10
 
 model:
-  name: FullyConnectedSNN
+  name: FCSNN
   module_name: src.models.fsnn
   parameters: 
     n_input: *image_size
     n_hidden: 1000
     n_output: *n_class
-    beta: 0.5
+    beta: 0.8
     timesteps: 50
     encoding_type: rate
 
 dataset:
   name: MNIST
+  module_name: torchvision.datasets
   parameters:
     data_dir: ./data
     image_size: *image_size
