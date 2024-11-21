@@ -7,7 +7,7 @@ from torch.utils.tensorboard import SummaryWriter
 from uuid import uuid4
 from src.utils.parameters import write_params_to_file, load_parameters, instanciate_cls
 from torchsummary import summary
-from src.experiment.base import BaseExperiment
+from src.experiment.base import SNNExperiment, AbstractExperiment
 
 if __name__ == "__main__":
 
@@ -37,8 +37,7 @@ if __name__ == "__main__":
         torch.manual_seed(xp_params["seed"])
 
     experiment_id = str(uuid4())[:8]
-    experiment_name = f'experiment_{experiment_id}' if not params['experiment'][
-        'name'] else f"{params['experiment']['name']} - {experiment_id}"
+    experiment_name = f"{params['dataset']['name']}_{params['model']['name']}_{experiment_id}"
     logging.info(
         'Initialization of the experiment protocol - {}'.format(experiment_name))
     log_dir = os.path.join(xp_params["log_dir"], experiment_name)
@@ -70,14 +69,24 @@ if __name__ == "__main__":
     ## ========== MODEL ========== ##
 
     model = instanciate_cls(
-        'src.models.csnn', params['model']['name'], model_params)
-    summary(model.net, model_params['in_shape'])
+        params['model']['module_name'], params['model']['name'], model_params)
+    logging.info(f"Model - {model}")
+    model.to(DEVICE)
 
     # ========== TRAINING ========== ##
 
     writer = SummaryWriter(log_dir=log_dir, flush_secs=60)
 
     logging.info(f'Running on device : {DEVICE}')
-    experiment = BaseExperiment(
-        model, writer, log_interval=log_interval, encoding_type=xp_params['encoding'], num_steps=xp_params['num_steps'], lr=xp_params['lr'], device=DEVICE)
-    experiment.fit(train_dl, test_dl, xp_params['epochs'])
+    experiment: AbstractExperiment = instanciate_cls(
+        params['experiment']['module_name'],
+        params['experiment']['name'],
+        {
+            "model": model,
+            "writer": writer,
+            "log_interval": log_interval,
+            "lr": xp_params['lr'],
+        }
+    )
+
+    experiment.fit(train_dl, test_dl, xp_params['num_epochs'])
