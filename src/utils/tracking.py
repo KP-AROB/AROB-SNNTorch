@@ -36,8 +36,8 @@ def plot_classes_preds(net, images, labels, classes):
     Uses the "images_to_probs" function.
     '''
     preds, probs = images_to_probs(net, images)
-    # plot the images in the batch, along with predicted and true labels
-    fig = plt.figure(figsize=(12, 48))
+    print(images.shape)
+    fig = plt.figure(figsize=(10, 10))
     for idx in np.arange(4):
         ax = fig.add_subplot(1, 4, idx+1, xticks=[], yticks=[])
         matplotlib_imshow(images[idx], one_channel=True)
