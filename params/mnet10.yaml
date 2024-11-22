@@ -1,0 +1,29 @@
+variables:
+  image_size: &image_size 224
+  n_class: &n_class 4
+
+model:
+  name: MNET10
+  module_name: src.models.cnn
+  parameters:
+    n_input: 3
+    n_output: *n_class
+
+dataset:
+  name: ImageFolder
+  module_name: torchvision.datasets
+  parameters:
+    data_dir: /home/nvidia/projects/Research/AROB-CBIS-DDSM-Preparation/data/roi-severity
+    image_size: *image_size
+    batch_size: 32
+    mean: 0.5
+    std: 0.5
+
+experiment:
+  name: CNNExperiment
+  module_name: src.experiment.cnn
+  parameters:
+    num_epochs: 100
+    lr: 0.0005
+    seed: 1234
+    log_dir: ./logs

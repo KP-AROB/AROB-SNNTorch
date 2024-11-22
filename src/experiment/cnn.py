@@ -16,7 +16,7 @@ class CNNExperiment(AbstractExperiment):
     def __init__(self, model: Module, writer: SummaryWriter, log_interval: int, lr: float) -> None:
         super().__init__(model, writer, log_interval, lr)
         self.criterion = nn.CrossEntropyLoss()
-        self.optimizer = optim.Adam(model.parameters(), lr=lr)
+        self.optimizer = optim.nadam(model.parameters(), lr=lr)
 
     def train(self, train_loader, epoch):
 
