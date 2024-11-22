@@ -34,8 +34,8 @@ def load_dataloader(dataset_name: str, dataset_params: dict, useGPU: bool = True
     train_dataset.transform = dataset_transforms
     test_dataset.transform = dataset_transforms
     if train_dataset.class_to_idx:
-        logging.info("Available labels in dataset : ",
-                     train_dataset.class_to_idx)
+        logging.info(
+            f"Available labels in dataset : {train_dataset.class_to_idx}")
 
     train_loader = DataLoader(
         train_dataset,
