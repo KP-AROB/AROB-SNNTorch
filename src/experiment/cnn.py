@@ -9,20 +9,21 @@ import os
 import logging
 import numpy as np
 from sklearn.metrics import accuracy_score
+from src.utils.tracking import plot_classes_preds
 
 
 class CNNExperiment(AbstractExperiment):
     def __init__(self, model: Module, writer: SummaryWriter, log_interval: int, lr: float) -> None:
         super().__init__(model, writer, log_interval, lr)
         self.criterion = nn.CrossEntropyLoss()
-        self.optimizer = optim.Adam(model.parameters(), lr=0.001)
+        self.optimizer = optim.Adam(model.parameters(), lr=lr)
 
     def train(self, train_loader, epoch):
 
         self.model.train()
-        train_loss = 0.0
         all_preds = []
         all_labels = []
+        running_loss = 0.0
 
         with tqdm(train_loader, leave=False, desc="Running training phase") as pbar:
             for step, (data, targets) in enumerate(train_loader):
@@ -35,19 +36,22 @@ class CNNExperiment(AbstractExperiment):
                 loss.backward()
                 self.optimizer.step()
 
-                train_loss += loss.item()
+                running_loss += loss.item()
                 _, preds = torch.max(outputs, 1)
                 all_preds.extend(preds.cpu().numpy())
                 all_labels.extend(labels.cpu().numpy())
 
-                global_step = (len(train_loader) * train_loader.batch_size) * \
-                    epoch + train_loader.batch_size * step
+                if step % self.log_interval == self.log_interval - 1:
+                    self.writer.add_scalar('training loss',
+                                           running_loss / 100,
+                                           epoch * len(train_loader) + step)
 
-                if step % self.log_interval == 0 and step > 0:
-                    self.writer.add_scalar(
-                        'loss/train', loss.item(), global_step=global_step)
-                pbar.set_description(
-                    f"Running training phase | loss/train : {np.mean(loss.item()):.4f}")
+                    if train_loader.dataset.classes:
+                        self.writer.add_figure('predictions vs. actuals',
+                                               plot_classes_preds(
+                                                   self.model, inputs, labels, train_loader.dataset.classes),
+                                               global_step=epoch * len(train_loader) + step)
+                        running_loss = 0.0
                 pbar.update()
 
         return accuracy_score(all_labels, all_preds)

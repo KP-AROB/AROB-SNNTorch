@@ -42,7 +42,7 @@ if __name__ == "__main__":
     log_dir = os.path.join(xp_params["log_dir"], experiment_name)
     os.makedirs(log_dir, exist_ok=True)
     write_params_to_file(params, log_dir)
-    log_interval = max(50 // data_params["batch_size"], 1)
+    log_interval = 100
 
     # ========== DATALOADER ========== ##
 

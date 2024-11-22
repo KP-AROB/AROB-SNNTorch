@@ -13,7 +13,6 @@ def load_dataloader(dataset_name: str, dataset_params: dict, useGPU: bool = True
     dataset_transforms = transforms.Compose(
         [
             transforms.Resize((image_size, image_size)),
-            transforms.Grayscale(),
             transforms.ToTensor(),
             transforms.Normalize(
                 (dataset_params['mean'],), (dataset_params['std'],)),
