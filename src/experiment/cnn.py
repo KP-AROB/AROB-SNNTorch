@@ -41,13 +41,9 @@ class CNNExperiment(AbstractExperiment):
                     self.writer.add_scalar('train/loss',
                                            running_loss / 100,
                                            epoch * len(train_loader) + step)
-
-                    self.writer.add_scalar('train/acc',
-                                           accuracy_score(
-                                               train_labels, train_preds),
-                                           epoch * len(train_loader) + step)
                     running_loss = 0.0
                 pbar.update()
+        return accuracy_score(train_labels, train_preds)
 
     def test(self, test_loader):
         self.model.eval()
@@ -71,18 +67,22 @@ class CNNExperiment(AbstractExperiment):
     def fit(self, train_loader, test_loader, num_epochs):
         pbar = trange(
             num_epochs, desc=f"Epoch 1/{num_epochs}")
-        current_acc = 0
+        train_acc = 0
+        test_acc = 0
+
         for epoch in pbar:
-            self.train(train_loader, epoch)
+            train_acc = self.train(train_loader, epoch)
             test_acc = self.test(test_loader)
-            current_acc = test_acc
-            self.writer.add_scalar('test/acc', current_acc, epoch)
+            self.writer.add_scalar('train/acc', train_acc, epoch)
+            self.writer.add_scalar('test/acc', test_acc, epoch)
 
         torch.save(self.model.state_dict(), os.path.join(
             self.writer.log_dir, 'checkpoint.pth'))
 
         with open(self.writer.log_dir + '/parameters.txt', "a") as file:
-            file.write(f"\nFinal Accuracy: {current_acc}\n")
+            file.write(f"\nFinal Train Accuracy: {train_acc}\n")
+            file.write(f"\nFinal Test Accuracy: {test_acc}\n")
 
         logging.info("Training Completed.")
-        logging.info(f"Final test accuracy: {current_acc}%")
+        logging.info(f"Final train accuracy: {train_acc} %")
+        logging.info(f"Final test accuracy: {test_acc} %")
