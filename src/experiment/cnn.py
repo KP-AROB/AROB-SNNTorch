@@ -22,6 +22,8 @@ class CNNExperiment(AbstractExperiment):
 
         self.model.train()
         running_loss = 0.0
+        train_preds = []
+        train_labels = []
 
         with tqdm(train_loader, leave=False, desc="Running training phase") as pbar:
             for step, (data, targets) in enumerate(train_loader):
@@ -32,25 +34,26 @@ class CNNExperiment(AbstractExperiment):
                 loss.backward()
                 self.optimizer.step()
                 running_loss += loss.item()
+                train_preds.extend(torch.argmax(outputs, dim=1).cpu().numpy())
+                train_labels.extend(labels.cpu().numpy())
 
                 if step % self.log_interval == self.log_interval - 1:
                     self.writer.add_scalar('train/loss',
                                            running_loss / 100,
                                            epoch * len(train_loader) + step)
 
-                    if train_loader.dataset.classes:
-                        self.writer.add_figure('train/preds',
-                                               plot_classes_preds(
-                                                   self.model, inputs, labels, train_loader.dataset.classes),
-                                               global_step=epoch * len(train_loader) + step)
-                        running_loss = 0.0
+                    self.writer.add_scalar('train/acc',
+                                           accuracy_score(
+                                               train_labels, train_preds),
+                                           epoch * len(train_loader) + step)
+                    running_loss = 0.0
                 pbar.update()
 
     def test(self, test_loader):
         self.model.eval()
 
-        val_correct = 0
-        val_total = 0
+        test_preds = []
+        test_labels = []
 
         with torch.no_grad():
             with tqdm(test_loader, leave=False, desc="Running testing phase") as pbar:
@@ -58,12 +61,12 @@ class CNNExperiment(AbstractExperiment):
                     inputs, labels = data.to(
                         self.device), targets.to(self.device)
                     outputs = self.model(inputs)
-                    _, preds = torch.max(outputs, 1)
-                    val_total += labels.size(0)
-                    val_correct += (preds == labels).sum().item()
+                    test_preds.extend(torch.argmax(
+                        outputs, dim=1).cpu().numpy())
+                    test_labels.extend(labels.cpu().numpy())
                     pbar.update()
-        accuracy = 100 * val_correct / val_total
-        return accuracy
+        test_acc = accuracy_score(test_labels, test_preds)
+        return test_acc
 
     def fit(self, train_loader, test_loader, num_epochs):
         pbar = trange(
@@ -73,7 +76,7 @@ class CNNExperiment(AbstractExperiment):
             self.train(train_loader, epoch)
             test_acc = self.test(test_loader)
             current_acc = test_acc
-            self.writer.add_scalar('test/accuracy', current_acc, epoch)
+            self.writer.add_scalar('test/acc', current_acc, epoch)
 
         torch.save(self.model.state_dict(), os.path.join(
             self.writer.log_dir, 'checkpoint.pth'))
