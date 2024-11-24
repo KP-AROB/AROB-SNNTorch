@@ -43,18 +43,18 @@ def load_dataloader(dataset_name: str, dataset_params: dict, useGPU: bool = True
         test_dataset: Dataset = instanciate_cls("torchvision.datasets", dataset_name, {
             'root': dataset_params['data_dir'], "train": False})
 
+    if train_dataset.class_to_idx:
+        logging.info(
+            f"Available labels in dataset : {train_dataset.class_to_idx}")
+
+    train_dataset.transform = dataset_transforms
     img_nums = int(len(train_dataset))
     valid_num = int(img_nums * val_ratio)
     train_num = img_nums - valid_num
     train_dataset, val_dataset = random_split(
         train_dataset, [train_num, valid_num]
     )
-
-    train_dataset.transform = dataset_transforms
     test_dataset.transform = dataset_transforms
-    if train_dataset.class_to_idx:
-        logging.info(
-            f"Available labels in dataset : {train_dataset.class_to_idx}")
 
     train_loader = DataLoader(
         train_dataset,

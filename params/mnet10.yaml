@@ -13,10 +13,10 @@ dataset:
   name: ImageFolder
   module_name: torchvision.datasets
   parameters:
-    data_dir: /home/nvidia/projects/Research/AROB-CBIS-DDSM-Preparation/data/roi-severity
+    data_dir: /home/nvidia/projects/Research/AROB-CBIS-DDSM-Preparation/data/scan-severity_synthetized
     image_size: *image_size
     batch_size: 32
-    channels: 1
+    channels: 3
     mean: 0.52
     std: 0.15
 
