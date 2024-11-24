@@ -10,14 +10,27 @@ def load_dataloader(dataset_name: str, dataset_params: dict, useGPU: bool = True
     batch_size = dataset_params['batch_size']
     n_workers = useGPU * 4 * torch.cuda.device_count()
 
-    dataset_transforms = transforms.Compose(
-        [
-            transforms.Resize((image_size, image_size)),
-            transforms.ToTensor(),
-            transforms.Normalize(
-                (dataset_params['mean'],), (dataset_params['std'],)),
-        ]
-    )
+    if dataset_params['channels'] == 3:
+        dataset_transforms = transforms.Compose(
+            [
+                transforms.Resize((image_size, image_size)),
+                transforms.ToTensor(),
+                transforms.Normalize(
+                    (dataset_params['mean'], dataset_params['mean'],
+                     dataset_params['mean']),
+                    (dataset_params['std'], dataset_params['std'], dataset_params['std'])),
+            ]
+        )
+    else:
+        dataset_transforms = transforms.Compose(
+            [
+                transforms.Grayscale(),
+                transforms.Resize((image_size, image_size)),
+                transforms.ToTensor(),
+                transforms.Normalize(
+                    (dataset_params['mean'],), (dataset_params['std'],)),
+            ]
+        )
 
     if dataset_name == "ImageFolder":
         train_dataset: Dataset = instanciate_cls("torchvision.datasets", dataset_name, {

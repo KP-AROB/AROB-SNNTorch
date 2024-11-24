@@ -16,8 +16,9 @@ dataset:
     data_dir: /home/nvidia/projects/Research/AROB-CBIS-DDSM-Preparation/data/roi-severity
     image_size: *image_size
     batch_size: 32
-    mean: 0.5
-    std: 0.5
+    channels: 1
+    mean: 0.52
+    std: 0.15
 
 experiment:
   name: CNNExperiment

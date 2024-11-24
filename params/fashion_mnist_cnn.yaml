@@ -16,6 +16,7 @@ dataset:
     data_dir: ./data
     image_size: *image_size
     batch_size: 128
+    channels: 1
     mean: 0.5
     std: 0.5
 
