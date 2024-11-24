@@ -7,9 +7,8 @@ class FMNIST_CNN(nn.Module):
     def __init__(self, n_input=3, n_output=2):
         super(FMNIST_CNN, self).__init__()
 
-        self.device = torch.device(
-            "cuda") if torch.cuda.is_available() else torch.device("cpu")
-
+        self.input = n_input
+        self.n_output = n_output
         self.conv1 = nn.Conv2d(n_input, 6, 5)
         self.pool = nn.MaxPool2d(2, 2)
         self.conv2 = nn.Conv2d(6, 16, 5)
@@ -32,9 +31,6 @@ class ShallowCNN(nn.Module):
         super(ShallowCNN, self).__init__()
 
         self.n_fc = 29
-        self.device = torch.device(
-            "cuda") if torch.cuda.is_available() else torch.device("cpu")
-
         self.conv1 = nn.Conv2d(n_input, 6, 5)
         self.pool = nn.MaxPool2d(2, 2)
         self.conv2 = nn.Conv2d(6, 16, 5)
@@ -56,10 +52,9 @@ class MNET10(nn.Module):
     def __init__(self, n_input=3, n_output=4):
         super(MNET10, self).__init__()
 
+        self.input = n_input
+        self.n_output = n_output
         k_size = 3
-        self.device = torch.device(
-            "cuda") if torch.cuda.is_available() else torch.device("cpu")
-
         self.conv1 = nn.Conv2d(n_input, 16, k_size)
         self.conv2 = nn.Conv2d(16, 32, k_size)
         self.conv3 = nn.Conv2d(32, 32, k_size)
