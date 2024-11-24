@@ -2,10 +2,10 @@ import torch
 import logging
 from torchvision import transforms
 from src.utils.parameters import instanciate_cls
-from torch.utils.data import Dataset, DataLoader
+from torch.utils.data import Dataset, DataLoader, random_split
 
 
-def load_dataloader(dataset_name: str, dataset_params: dict, useGPU: bool = True):
+def load_dataloader(dataset_name: str, dataset_params: dict, useGPU: bool = True, val_ratio: float = 0.2):
     image_size = dataset_params['image_size']
     batch_size = dataset_params['batch_size']
     n_workers = useGPU * 4 * torch.cuda.device_count()
@@ -43,6 +43,13 @@ def load_dataloader(dataset_name: str, dataset_params: dict, useGPU: bool = True
         test_dataset: Dataset = instanciate_cls("torchvision.datasets", dataset_name, {
             'root': dataset_params['data_dir'], "train": False})
 
+    img_nums = int(len(train_dataset))
+    valid_num = int(img_nums * val_ratio)
+    train_num = img_nums - valid_num
+    train_dataset, val_dataset = random_split(
+        train_dataset, [train_num, valid_num]
+    )
+
     train_dataset.transform = dataset_transforms
     test_dataset.transform = dataset_transforms
     if train_dataset.class_to_idx:
@@ -57,6 +64,14 @@ def load_dataloader(dataset_name: str, dataset_params: dict, useGPU: bool = True
         num_workers=n_workers
     )
 
+    val_loader = DataLoader(
+        val_dataset,
+        batch_size=batch_size,
+        shuffle=False,
+        pin_memory=useGPU,
+        num_workers=n_workers
+    )
+
     test_loader = DataLoader(
         test_dataset,
         batch_size=batch_size,
@@ -65,4 +80,4 @@ def load_dataloader(dataset_name: str, dataset_params: dict, useGPU: bool = True
         num_workers=n_workers
     )
 
-    return train_loader, test_loader
+    return train_loader, val_loader, test_loader
