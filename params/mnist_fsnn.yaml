@@ -7,10 +7,9 @@ model:
   module_name: src.models.fsnn
   parameters: 
     input_shape: !!python/tuple [1, 28, 28]
-    n_hidden: 1000
     n_output: *n_class
+    n_steps: 50
     beta: 0.8
-    timesteps: 50
     encoding_type: rate
 
 dataset:

@@ -1,83 +1,77 @@
 import torch
+import os
 import logging
 from torchvision import transforms
 from src.utils.parameters import instanciate_cls
-from torch.utils.data import Dataset, DataLoader, random_split
+from torch.utils.data import DataLoader, random_split
+from monai.transforms import *
+from torchvision.datasets import ImageFolder
 
 
 def load_dataloader(dataset_name: str, dataset_params: dict, useGPU: bool = True, val_ratio: float = 0.2):
     image_size = dataset_params['image_size']
     batch_size = dataset_params['batch_size']
-    n_workers = useGPU * 4 * torch.cuda.device_count()
+    channels = dataset_params['channels']
+    mean, std = dataset_params['mean'], dataset_params['std']
+    use_augmentations = dataset_params.get('use_augmentations', True)
 
-    if dataset_params['channels'] == 3:
-        dataset_transforms = transforms.Compose(
-            [
-                transforms.Resize((image_size, image_size)),
-                transforms.ToTensor(),
-                transforms.Normalize(
-                    (dataset_params['mean'], dataset_params['mean'],
-                     dataset_params['mean']),
-                    (dataset_params['std'], dataset_params['std'], dataset_params['std'])),
-            ]
-        )
-    else:
-        dataset_transforms = transforms.Compose(
-            [
-                transforms.Grayscale(),
-                transforms.Resize((image_size, image_size)),
-                transforms.ToTensor(),
-                transforms.Normalize(
-                    (dataset_params['mean'],), (dataset_params['std'],)),
-            ]
-        )
+    n_workers = 4 * torch.cuda.device_count() if useGPU else 2
 
+    train_augmentations = [
+        transforms.RandomVerticalFlip(p=0.3),
+        transforms.RandomHorizontalFlip(p=0.3),
+        RandRotate90(prob=0.3, max_k=3),
+    ] if use_augmentations else []
+
+    base_transforms = [
+        *([transforms.Grayscale()] if channels == 1 else []),
+        transforms.Resize((image_size, image_size)),
+        transforms.ToTensor()
+    ]
+
+    normalize_transform = [transforms.Normalize((mean,) if channels == 1 else (mean, mean, mean),
+                                                (std,) if channels == 1 else (std, std, std))]
+
+    # Compose transforms for each phase
+    train_transforms = transforms.Compose(
+        base_transforms + train_augmentations + normalize_transform)
+    val_test_transforms = transforms.Compose(
+        base_transforms + normalize_transform)
+
+    # Helper function for dataset instantiation
+    def get_dataset(name, root, is_train):
+        if name == "ImageFolder":
+            return ImageFolder(root=root, transform=train_transforms if is_train else val_test_transforms)
+        return instanciate_cls("torchvision.datasets", name, {
+            'root': root, "train": is_train, "transform": train_transforms if is_train else val_test_transforms
+        })
+
+    # Load datasets
     if dataset_name == "ImageFolder":
-        train_dataset: Dataset = instanciate_cls("torchvision.datasets", dataset_name, {
-            'root': dataset_params['data_dir'] + '/train'})
-        test_dataset: Dataset = instanciate_cls("torchvision.datasets", dataset_name, {
-            'root': dataset_params['data_dir'] + '/test'})
+        train_dataset = get_dataset(dataset_name, os.path.join(
+            dataset_params['data_dir'], 'train'), True)
+        test_dataset = get_dataset(dataset_name, os.path.join(
+            dataset_params['data_dir'], 'test'), False)
     else:
-        train_dataset: Dataset = instanciate_cls("torchvision.datasets", dataset_name, {
-            'root': dataset_params['data_dir'], "train": True})
-        test_dataset: Dataset = instanciate_cls("torchvision.datasets", dataset_name, {
-            'root': dataset_params['data_dir'], "train": False})
+        train_dataset = get_dataset(
+            dataset_name, dataset_params['data_dir'], True)
+        test_dataset = get_dataset(
+            dataset_name, dataset_params['data_dir'], False)
 
-    if train_dataset.class_to_idx:
+    if hasattr(train_dataset, 'class_to_idx'):
         logging.info(
-            f"Available labels in dataset : {train_dataset.class_to_idx}")
+            f"Available labels in dataset: {train_dataset.class_to_idx}")
 
-    train_dataset.transform = dataset_transforms
-    img_nums = int(len(train_dataset))
-    valid_num = int(img_nums * val_ratio)
-    train_num = img_nums - valid_num
+    train_size = int((1 - val_ratio) * len(train_dataset))
+    val_size = len(train_dataset) - train_size
     train_dataset, val_dataset = random_split(
-        train_dataset, [train_num, valid_num]
-    )
-    test_dataset.transform = dataset_transforms
+        train_dataset, [train_size, val_size])
 
-    train_loader = DataLoader(
-        train_dataset,
-        batch_size=batch_size,
-        shuffle=True,
-        pin_memory=useGPU,
-        num_workers=n_workers
-    )
-
-    val_loader = DataLoader(
-        val_dataset,
-        batch_size=batch_size,
-        shuffle=False,
-        pin_memory=useGPU,
-        num_workers=n_workers
-    )
-
-    test_loader = DataLoader(
-        test_dataset,
-        batch_size=batch_size,
-        shuffle=False,
-        pin_memory=useGPU,
-        num_workers=n_workers
-    )
+    train_loader = DataLoader(train_dataset, batch_size=batch_size,
+                              shuffle=True, pin_memory=useGPU, num_workers=n_workers)
+    val_loader = DataLoader(val_dataset, batch_size=batch_size,
+                            shuffle=False, pin_memory=useGPU, num_workers=n_workers)
+    test_loader = DataLoader(test_dataset, batch_size=batch_size,
+                             shuffle=False, pin_memory=useGPU, num_workers=n_workers)
 
     return train_loader, val_loader, test_loader

@@ -7,18 +7,18 @@ import torch.optim as optim
 import torch
 import os
 import logging
-import numpy as np
-from sklearn.metrics import accuracy_score
-from torchmetrics import Accuracy
+from torchmetrics import Accuracy, F1Score
+from torch.optim.lr_scheduler import ReduceLROnPlateau
 
 
 class CNNExperiment(AbstractExperiment):
-    def __init__(self, model: Module, writer: SummaryWriter, log_interval: int, lr: float) -> None:
+    def __init__(self, model: nn.Module, writer: SummaryWriter, log_interval: int, lr: float):
         super().__init__(model, writer, log_interval, lr)
         self.criterion = nn.CrossEntropyLoss()
         self.metric = Accuracy(
             task="multiclass", num_classes=self.model.n_output).to(self.device)
-        self.optimizer = optim.NAdam(model.parameters(), lr=lr)
+        self.optimizer = optim.Adam(
+            model.parameters(), lr=lr)
 
     def train(self, train_loader):
         self.model.train()
@@ -31,13 +31,16 @@ class CNNExperiment(AbstractExperiment):
                 inputs, labels = data.to(self.device), targets.to(self.device)
                 outputs = self.model(inputs)
                 loss = self.criterion(outputs, labels)
+
                 self.optimizer.zero_grad()
                 loss.backward()
                 self.optimizer.step()
+
                 train_loss += loss.item()
                 train_preds.append(torch.argmax(outputs, dim=1).cpu())
                 train_labels.append(labels.cpu())
                 pbar.update(1)
+
         train_loss /= len(train_loader)
         train_acc = self.metric(torch.cat(train_preds),
                                 torch.cat(train_labels))
@@ -45,8 +48,7 @@ class CNNExperiment(AbstractExperiment):
 
     def test(self, test_loader):
         self.model.eval()
-
-        test_loss = 0
+        test_loss = 0.0
         test_preds = []
         test_labels = []
 
@@ -58,36 +60,34 @@ class CNNExperiment(AbstractExperiment):
                     outputs = self.model(inputs)
                     loss = self.criterion(outputs, labels)
                     test_loss += loss.item()
+
                     test_preds.append(torch.argmax(outputs, dim=1).cpu())
                     test_labels.append(labels.cpu())
                     pbar.update(1)
 
         test_loss /= len(test_loader)
-        test_acc = self.metric(torch.cat(test_preds),
-                               torch.cat(test_labels))
+        test_acc = self.metric(torch.cat(test_preds), torch.cat(test_labels))
         return test_loss, test_acc.item()
 
-    def fit(self, train_loader, test_loader, num_epochs):
-        pbar = trange(
-            num_epochs, desc="Completed Epoch")
-        train_acc = 0
-        test_acc = 0
+    def fit(self, train_loader, val_loader, num_epochs):
+        best_val_loss = float('inf')
 
-        for epoch in pbar:
+        for epoch in range(num_epochs):
             train_loss, train_acc = self.train(train_loader)
-            test_loss, test_acc = self.test(test_loader)
+            val_loss, val_acc = self.test(val_loader)
+
             self.writer.add_scalar('train/acc', train_acc, epoch)
             self.writer.add_scalar('train/loss', train_loss, epoch)
-            self.writer.add_scalar('test/acc', test_acc, epoch)
-            self.writer.add_scalar('test/loss', test_loss, epoch)
+            self.writer.add_scalar('val/acc', val_acc, epoch)
+            self.writer.add_scalar('val/loss', val_loss, epoch)
+
+            if val_loss < best_val_loss:
+                best_val_loss = val_loss
+                torch.save(self.model.state_dict(), os.path.join(
+                    self.writer.log_dir, 'best_model.pth'))
+
+            logging.info(
+                f"Epoch {epoch+1}: Train/Val Acc: {train_acc:.4f} | {val_acc:4f}, Train/Val Loss: {train_loss:.4f} | {val_loss:4f}")
 
         torch.save(self.model.state_dict(), os.path.join(
-            self.writer.log_dir, 'checkpoint.pth'))
-
-        with open(self.writer.log_dir + '/parameters.txt', "a") as file:
-            file.write(f"\nFinal Train Accuracy: {train_acc}\n")
-            file.write(f"\nFinal Test Accuracy: {test_acc}\n")
-
-        logging.info("Training Completed.")
-        logging.info(f"Final train accuracy: {train_acc} %")
-        logging.info(f"Final test accuracy: {test_acc} %")
+            self.writer.log_dir, 'final_model.pth'))

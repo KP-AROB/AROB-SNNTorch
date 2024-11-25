@@ -35,11 +35,12 @@ if __name__ == "__main__":
     else:
         torch.manual_seed(xp_params["seed"])
 
-    experiment_id = str(uuid4())[:8]
-    experiment_name = f"{params['dataset']['name']}_{params['model']['name']}_{experiment_id}"
+    experiment_id = str(uuid4())[:4]
+    experiment_name = f"{params['model']['name']}_{experiment_id}_{xp_params['suffix']}"
     logging.info(
         'Initialization of the experiment protocol - {}'.format(experiment_name))
-    log_dir = os.path.join(xp_params["log_dir"], experiment_name)
+    log_dir = os.path.join(
+        xp_params["log_dir"], experiment_name)
     os.makedirs(log_dir, exist_ok=True)
     write_params_to_file(params, log_dir)
     log_interval = 100
@@ -76,4 +77,4 @@ if __name__ == "__main__":
         }
     )
 
-    experiment.fit(train_dl, val_dl, xp_params['num_epochs'])
+    experiment.fit(train_dl, test_dl, xp_params['num_epochs'])
