@@ -49,10 +49,10 @@ class MNET10_3Conv(nn.Module):
             (in_size - n_conv * k_size + 1 * n_conv) / 2**n_conv) - 1
         self.conv1 = nn.Conv2d(n_input, 16, k_size)
         self.conv2 = nn.Conv2d(16, 32, k_size)
-        self.conv3 = nn.Conv2d(32, 32, k_size)
+        self.conv3 = nn.Conv2d(32, 64, k_size)
         self.prelu = nn.PReLU()
         self.flatten = nn.Flatten()
-        self.fc1 = nn.Linear(fc_size * fc_size * 32, 1024)
+        self.fc1 = nn.Linear(fc_size * fc_size * 64, 1024)
         self.fc2 = nn.Linear(1024, n_output)
         self.dropout = nn.Dropout(0.5)
         self.pool = nn.MaxPool2d(2, 2)

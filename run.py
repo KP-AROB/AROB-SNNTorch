@@ -74,7 +74,8 @@ if __name__ == "__main__":
             "writer": writer,
             "log_interval": log_interval,
             "lr": xp_params['lr'],
-            "class_weights": class_weights
+            "class_weights": class_weights,
+            "weight_decay": xp_params['weight_decay']
         }
     )
 
