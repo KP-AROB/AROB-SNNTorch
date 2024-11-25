@@ -12,7 +12,7 @@ from torch.utils.data import Subset
 import numpy as np
 
 
-def load_dataloader(dataset_name: str, dataset_params: dict, useGPU: bool = True, val_ratio: float = 0.2):
+def load_dataloader(dataset_name: str, dataset_params: dict, useGPU: bool = True):
     image_size = dataset_params['image_size']
     batch_size = dataset_params['batch_size']
     channels = dataset_params['channels']

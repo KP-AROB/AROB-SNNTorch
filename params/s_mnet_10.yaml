@@ -1,0 +1,37 @@
+variables:
+  image_size: &image_size 128
+  n_class: &n_class 4
+  n_input: &n_input 1
+
+model:
+  name: S_MNET10
+  module_name: src.models.csnn
+  parameters:
+    input_shape: !!python/tuple [*n_input, *image_size, *image_size]
+    n_output: *n_class
+    n_steps: 50
+    beta: 0.5
+    encoding_type:
+
+dataset:
+  name: ImageFolder
+  module_name: torchvision.datasets
+  parameters:
+    data_dir: /home/nvidia/projects/Research/AROB-CBIS-DDSM-Preparation/data/scan-severity
+    image_size: *image_size
+    batch_size: 8
+    channels: *n_input
+    mean: 0.52
+    std: 0.17
+    use_augmentations: false
+
+experiment:
+  name: SNNExperiment
+  module_name: src.experiment.snn
+  parameters:
+    num_epochs: 50
+    lr: .0005
+    weight_decay: .0001
+    seed: 1234
+    log_dir: ./logs
+    suffix: scan_raw

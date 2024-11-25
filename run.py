@@ -59,8 +59,8 @@ if __name__ == "__main__":
     model = instanciate_cls(
         params['model']['module_name'], params['model']['name'], model_params)
     logging.info(f"Model - {model}")
-    model.to(DEVICE)
 
+    model.to(DEVICE)
     # # ========== TRAINING ========== ##
 
     writer = SummaryWriter(log_dir=log_dir, flush_secs=60)
