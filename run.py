@@ -47,7 +47,7 @@ if __name__ == "__main__":
 
     # ========== DATALOADER ========== ##
 
-    train_dl, val_dl, test_dl = load_dataloader(
+    train_dl, val_dl, test_dl, class_weights = load_dataloader(
         params['dataset']['name'],
         data_params,
         gpu)
@@ -61,7 +61,7 @@ if __name__ == "__main__":
     logging.info(f"Model - {model}")
     model.to(DEVICE)
 
-    # ========== TRAINING ========== ##
+    # # ========== TRAINING ========== ##
 
     writer = SummaryWriter(log_dir=log_dir, flush_secs=60)
 
@@ -74,7 +74,8 @@ if __name__ == "__main__":
             "writer": writer,
             "log_interval": log_interval,
             "lr": xp_params['lr'],
+            "class_weights": class_weights
         }
     )
 
-    experiment.fit(train_dl, test_dl, xp_params['num_epochs'])
+    experiment.fit(train_dl, val_dl, xp_params['num_epochs'])

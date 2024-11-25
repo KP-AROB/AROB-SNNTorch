@@ -12,12 +12,12 @@ from torch.optim.lr_scheduler import ReduceLROnPlateau
 
 
 class CNNExperiment(AbstractExperiment):
-    def __init__(self, model: nn.Module, writer: SummaryWriter, log_interval: int, lr: float):
+    def __init__(self, model: nn.Module, writer: SummaryWriter, log_interval: int, lr: float, class_weights: torch.Tensor):
         super().__init__(model, writer, log_interval, lr)
-        self.criterion = nn.CrossEntropyLoss()
+        self.criterion = nn.CrossEntropyLoss(weight=class_weights)
         self.metric = Accuracy(
             task="multiclass", num_classes=self.model.n_output).to(self.device)
-        self.optimizer = optim.Adam(
+        self.optimizer = optim.NAdam(
             model.parameters(), lr=lr)
 
     def train(self, train_loader):

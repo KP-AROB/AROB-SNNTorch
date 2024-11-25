@@ -12,3 +12,4 @@ torchmetrics
 torchsummary
 torchvision
 tqdm
+monai

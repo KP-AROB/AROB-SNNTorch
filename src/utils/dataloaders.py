@@ -6,6 +6,10 @@ from src.utils.parameters import instanciate_cls
 from torch.utils.data import DataLoader, random_split
 from monai.transforms import *
 from torchvision.datasets import ImageFolder
+from collections import Counter
+from sklearn.model_selection import train_test_split
+from torch.utils.data import Subset
+import numpy as np
 
 
 def load_dataloader(dataset_name: str, dataset_params: dict, useGPU: bool = True, val_ratio: float = 0.2):
@@ -62,16 +66,26 @@ def load_dataloader(dataset_name: str, dataset_params: dict, useGPU: bool = True
         logging.info(
             f"Available labels in dataset: {train_dataset.class_to_idx}")
 
-    train_size = int((1 - val_ratio) * len(train_dataset))
-    val_size = len(train_dataset) - train_size
-    train_dataset, val_dataset = random_split(
-        train_dataset, [train_size, val_size])
+    training_label_counts = Counter(train_dataset.targets)
+    logging.info('Training class balance : {}'.format(training_label_counts))
+    total_samples = sum(training_label_counts.values())
+    class_weights = torch.tensor([total_samples / training_label_counts[cls]
+                                 for cls in range(len(training_label_counts))], dtype=torch.float).to('cuda' if useGPU else 'cpu')
+    logging.info('Using class weights : {}'.format(
+        class_weights.cpu().numpy()))
 
-    train_loader = DataLoader(train_dataset, batch_size=batch_size,
+    indices = np.arange(len(train_dataset))
+    train_indices, val_indices = train_test_split(
+        indices, test_size=0.2, stratify=train_dataset.targets
+    )
+    tr_dataset = Subset(train_dataset, train_indices)
+    val_dataset = Subset(train_dataset, val_indices)
+
+    train_loader = DataLoader(tr_dataset, batch_size=batch_size,
                               shuffle=True, pin_memory=useGPU, num_workers=n_workers)
     val_loader = DataLoader(val_dataset, batch_size=batch_size,
                             shuffle=False, pin_memory=useGPU, num_workers=n_workers)
     test_loader = DataLoader(test_dataset, batch_size=batch_size,
                              shuffle=False, pin_memory=useGPU, num_workers=n_workers)
 
-    return train_loader, val_loader, test_loader
+    return train_loader, val_loader, test_loader, class_weights
