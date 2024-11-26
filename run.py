@@ -61,7 +61,8 @@ if __name__ == "__main__":
     logging.info(f"Model - {model}")
 
     model.to(DEVICE)
-    # # ========== TRAINING ========== ##
+
+    # # # ========== TRAINING ========== ##
 
     writer = SummaryWriter(log_dir=log_dir, flush_secs=60)
 

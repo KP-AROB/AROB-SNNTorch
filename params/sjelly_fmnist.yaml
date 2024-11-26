@@ -4,7 +4,7 @@ variables:
   n_input: &n_input 1
 
 model:
-  name: VGGLike
+  name: SJellyCSNN
   module_name: src.models.jelly
   parameters:
     input_shape: !!python/tuple [*n_input, *image_size, *image_size]
