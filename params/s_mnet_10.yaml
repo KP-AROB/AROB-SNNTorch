@@ -5,7 +5,7 @@ variables:
 
 model:
   name: S_MNET10
-  module_name: src.models.csnn
+  module_name: src.models.snnTorch
   parameters:
     input_shape: !!python/tuple [*n_input, *image_size, *image_size]
     n_output: *n_class
@@ -27,7 +27,7 @@ dataset:
 
 experiment:
   name: SNNExperiment
-  module_name: src.experiment.snn
+  module_name: src.experiment.snnTorch
   parameters:
     num_epochs: 100
     lr: .0005

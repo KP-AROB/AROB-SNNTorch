@@ -4,12 +4,12 @@ variables:
   n_input: &n_input 1
 
 model:
-  name: SJellyCSNN
-  module_name: src.models.csnn
+  name: VGGLike
+  module_name: src.models.jelly
   parameters:
     input_shape: !!python/tuple [*n_input, *image_size, *image_size]
     n_output: *n_class
-    n_steps: 20
+    n_steps: 4
 
 dataset:
   name: CIFAR10
@@ -25,7 +25,7 @@ dataset:
 
 experiment:
   name: SJellyExperiment
-  module_name: src.experiment.snn
+  module_name: src.experiment.jelly
   parameters:
     num_epochs: 50
     lr: .0001
