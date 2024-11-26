@@ -1,17 +1,15 @@
 variables:
-  image_size: &image_size 64
+  image_size: &image_size 32
   n_class: &n_class 10
   n_input: &n_input 1
 
 model:
-  name: S_MNET10
+  name: SJellyCSNN
   module_name: src.models.csnn
   parameters:
     input_shape: !!python/tuple [*n_input, *image_size, *image_size]
     n_output: *n_class
-    n_steps: 5
-    beta: 0.5
-    encoding_type:
+    n_steps: 20
 
 dataset:
   name: CIFAR10
@@ -19,18 +17,18 @@ dataset:
   parameters:
     data_dir: ./data
     image_size: *image_size
-    batch_size: 8
+    batch_size: 128
     channels: *n_input
     mean: 0.5
     std: 0.5
     use_augmentations: false
 
 experiment:
-  name: SNNExperiment
+  name: SJellyExperiment
   module_name: src.experiment.snn
   parameters:
-    num_epochs: 100
-    lr: .0005
+    num_epochs: 50
+    lr: .0001
     weight_decay: .0001
     seed: 1234
     log_dir: ./logs

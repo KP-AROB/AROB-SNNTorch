@@ -47,7 +47,7 @@ if __name__ == "__main__":
 
     # ========== DATALOADER ========== ##
 
-    train_dl, val_dl, test_dl, class_weights = load_dataloader(
+    train_dl, val_dl, test_dl = load_dataloader(
         params['dataset']['name'],
         data_params,
         gpu)
@@ -74,7 +74,6 @@ if __name__ == "__main__":
             "writer": writer,
             "log_interval": log_interval,
             "lr": xp_params['lr'],
-            "class_weights": class_weights,
             "weight_decay": xp_params['weight_decay']
         }
     )

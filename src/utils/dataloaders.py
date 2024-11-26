@@ -47,7 +47,7 @@ def load_dataloader(dataset_name: str, dataset_params: dict, useGPU: bool = True
         if name == "ImageFolder":
             return ImageFolder(root=root, transform=train_transforms if is_train else val_test_transforms)
         return instanciate_cls("torchvision.datasets", name, {
-            'root': root, "train": is_train, "transform": train_transforms if is_train else val_test_transforms
+            'root': root, "train": is_train, "download": True, "transform": train_transforms if is_train else val_test_transforms
         })
 
     # Load datasets
@@ -66,13 +66,13 @@ def load_dataloader(dataset_name: str, dataset_params: dict, useGPU: bool = True
         logging.info(
             f"Available labels in dataset: {train_dataset.class_to_idx}")
 
-    training_label_counts = Counter(train_dataset.targets)
-    logging.info('Training class balance : {}'.format(training_label_counts))
-    total_samples = sum(training_label_counts.values())
-    class_weights = torch.tensor([total_samples / training_label_counts[cls]
-                                 for cls in range(len(training_label_counts))], dtype=torch.float).to('cuda' if useGPU else 'cpu')
-    logging.info('Using class weights : {}'.format(
-        class_weights.cpu().numpy()))
+    # training_label_counts = Counter(train_dataset.targets)
+    # logging.info('Training class balance : {}'.format(training_label_counts))
+    # total_samples = sum(training_label_counts.values())
+    # class_weights = torch.tensor([total_samples / training_label_counts[cls]
+    #                              for cls in range(len(training_label_counts))], dtype=torch.float).to('cuda' if useGPU else 'cpu')
+    # logging.info('Using class weights : {}'.format(
+    #     class_weights.cpu().numpy()))
 
     indices = np.arange(len(train_dataset))
     train_indices, val_indices = train_test_split(
@@ -88,4 +88,4 @@ def load_dataloader(dataset_name: str, dataset_params: dict, useGPU: bool = True
     test_loader = DataLoader(test_dataset, batch_size=batch_size,
                              shuffle=False, pin_memory=useGPU, num_workers=n_workers)
 
-    return train_loader, val_loader, test_loader, class_weights
+    return train_loader, val_loader, test_loader

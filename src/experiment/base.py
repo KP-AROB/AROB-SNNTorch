@@ -9,7 +9,7 @@ from torch.utils.data import DataLoader
 
 class AbstractExperiment(ABC):
 
-    def __init__(self, model: torch.nn.Module, writer: SummaryWriter, log_interval: int, lr: float, class_weights: torch.Tensor, weight_decay: float) -> None:
+    def __init__(self, model: torch.nn.Module, writer: SummaryWriter, log_interval: int, lr: float, class_weights: torch.Tensor = None, weight_decay: float = 0) -> None:
         super().__init__()
         self.model = model
         self.writer = writer
@@ -38,14 +38,19 @@ class AbstractExperiment(ABC):
             self.writer.add_scalar('train/loss', train_loss, epoch)
             self.writer.add_scalar('val/acc', val_acc, epoch)
             self.writer.add_scalar('val/loss', val_loss, epoch)
-
+            
             if val_loss < best_val_loss:
                 best_val_loss = val_loss
-                torch.save(self.model.state_dict(), os.path.join(
+                checkpoint = {
+                    'net': self.model.state_dict(),
+                    'epoch': epoch,
+                    'max_test_acc': best_val_loss
+                }
+                torch.save(checkpoint, os.path.join(
                     self.writer.log_dir, 'best_model.pth'))
 
             logging.info(
-                f"Epoch {epoch+1}: Train/Val Acc: {train_acc:.4f} | {val_acc:4f}, Train/Val Loss: {train_loss:.4f} | {val_loss:4f}")
+                f"Epoch {epoch+1} / {num_epochs}: Train/Val Acc: {train_acc:.4f} | {val_acc:4f}, Train/Val Loss: {train_loss:.4f} | {val_loss:4f}")
 
         torch.save(self.model.state_dict(), os.path.join(
             self.writer.log_dir, 'final_model.pth'))

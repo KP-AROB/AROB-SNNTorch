@@ -2,80 +2,104 @@ import torch
 import snntorch as snn
 from torch import nn
 from .base import BaseFSNN
+from snntorch import utils
+from spikingjelly.activation_based import neuron, functional, surrogate, layer
 
-
-class S_MNET10(BaseFSNN):
+class ShallowCSNN(BaseFSNN):
     def __init__(self,
-                 input_shape: tuple = (1, 224, 224),
-                 n_output: int = 4,
-                 n_steps: int = 50,
-                 beta: float = 0.95,
-                 encoding_type: str = None):
-        super().__init__(input_shape, n_output,
-                         n_steps, beta, encoding_type)
+                 input_shape=(1, 28, 28),
+                 n_output=10,
+                 n_steps=5,
+                 beta=0.5,
+                 encoding_type=None):
+        super().__init__(input_shape, n_output, n_steps, beta, encoding_type)
 
-        k_size = 3
-        n_blocks = 4
-        fc_size = int(
-            (input_shape[1] - n_blocks * k_size + 1 * n_blocks) / 2**n_blocks) - 1
+        n_conv, k_size = 2, 5
+        fc_features = ((input_shape[1] - n_conv * k_size + 1 * n_conv) // 2**n_conv) - 1
 
-        self.conv1 = nn.Conv2d(input_shape[0], 16, k_size)
-        self.lif1 = snn.Leaky(beta=beta)
-
-        self.conv2 = nn.Conv2d(16, 32, k_size)
-        self.lif2 = snn.Leaky(beta=beta)
-
-        self.conv3 = nn.Conv2d(32, 32, k_size)
-        self.lif3 = snn.Leaky(beta=beta)
-
-        self.conv4 = nn.Conv2d(32, 64, k_size)
-        self.lif4 = snn.Leaky(beta=beta)
-
-        self.fc1 = nn.Linear(64 * fc_size**2, 1024)
-        self.lif_fc1 = snn.Leaky(beta=beta)
-
-        self.fc_out = nn.Linear(1024, n_output)
-        self.lif_out = snn.Leaky(beta=beta, output=True)
-
-        self.flatten = nn.Flatten()
-        self.pool = nn.MaxPool2d(2, 2)
+        self.layers = nn.ModuleList([
+            nn.Conv2d(input_shape[0], 6, k_size),
+            nn.MaxPool2d(2, 2),
+            snn.Leaky(beta=beta),
+            nn.Conv2d(6, 16, k_size),
+            nn.MaxPool2d(2, 2),
+            snn.Leaky(beta=beta),
+            nn.Flatten(),
+            nn.Linear(16 * fc_features**2, 120),
+            snn.Leaky(beta=beta),
+            nn.Linear(120, n_output),
+            snn.Leaky(beta=beta, output=True)
+        ])
+    
+    def reset_memories(self):
+        return [layer.reset_mem() if hasattr(layer, "reset_mem") else None for layer in self.layers]
 
     def forward(self, x):
-        mem1 = self.lif1.reset_mem()
-        mem2 = self.lif2.reset_mem()
-        mem3 = self.lif3.reset_mem()
-        mem4 = self.lif4.reset_mem()
-        mem_fc1 = self.lif_fc1.reset_mem()
-        mem_fc_out = self.lif_out.reset_mem()
+        memories = self.reset_memories()
 
-        spk_out_rec = []
-        mem_out_rec = []
+        spk_rec, mem_rec = [], []
 
-        data = self.encoding(
-            x, num_steps=self.n_steps) if self.encoding else x
+        data = self.encoding(x, num_steps=self.n_steps) if self.encoding else x
 
         for t in range(self.n_steps):
             spike_data = data[t] if self.encoding else data
+            memory_idx = 0
 
-            cur1 = self.pool(self.conv1(spike_data))
-            spk1, mem1 = self.lif1(cur1, mem1)
+            for layer in self.layers:
+                if hasattr(layer, "reset_mem"):
+                    spike_data, memories[memory_idx] = layer(spike_data, memories[memory_idx])
+                    memory_idx += 1
+                else:
+                    spike_data = layer(spike_data)
 
-            cur2 = self.pool(self.conv2(spk1))
-            spk2, mem2 = self.lif2(cur2, mem2)
+            spk_rec.append(spike_data)
+            mem_rec.append(memories[-1])
 
-            cur3 = self.pool(self.conv3(spk2))
-            spk3, mem3 = self.lif3(cur3, mem3)
+        return torch.stack(spk_rec, dim=0), torch.stack(mem_rec, dim=0)
+    
 
-            cur4 = self.pool(self.conv4(spk3))
-            spk4, mem4 = self.lif4(cur4, mem4)
 
-            cur5 = self.fc1(self.flatten(spk4))
-            spk5, mem_fc1 = self.lif_fc1(cur5, mem_fc1)
+class SJellyCSNN(nn.Module):
+    def __init__(self, 
+                 input_shape=(1, 28, 28),
+                 n_output=10,
+                 n_steps=5, use_cupy=True):
+        super().__init__()
 
-            cur_out = self.fc_out(spk5)
-            spk_out, mem_fc_out = self.lif_out(cur_out, mem_fc_out)
+        self.input_shape = input_shape
+        self.n_output = n_output
+        self.n_steps = n_steps
 
-            spk_out_rec.append(spk_out)
-            mem_out_rec.append(mem_fc_out)
+        channels = 16
+        fc_features = int(input_shape[1] / 4)
 
-        return torch.stack(spk_out_rec, dim=0), torch.stack(mem_out_rec, dim=0)
+        self.conv_fc = nn.Sequential(
+            layer.Conv2d(1, channels, kernel_size=3, padding=1, bias=False),
+            layer.BatchNorm2d(channels),
+            neuron.IFNode(surrogate_function=surrogate.ATan()),
+            layer.MaxPool2d(2, 2),  # 14 * 14
+
+            layer.Conv2d(channels, channels, kernel_size=3, padding=1, bias=False),
+            layer.BatchNorm2d(channels),
+            neuron.IFNode(surrogate_function=surrogate.ATan()),
+            layer.MaxPool2d(2, 2),  # 7 * 7
+
+            layer.Flatten(),
+            layer.Linear(channels * fc_features**2, channels * 4 * 4, bias=False),
+            neuron.IFNode(surrogate_function=surrogate.ATan()),
+
+            layer.Linear(channels * 4 * 4, self.n_output, bias=False),
+            neuron.IFNode(surrogate_function=surrogate.ATan()),
+        )
+
+        functional.set_step_mode(self, step_mode='m')
+
+        if use_cupy:
+            functional.set_backend(self, backend='cupy')
+
+    def forward(self, x: torch.Tensor):
+        x_seq = x.unsqueeze(0).repeat(self.n_steps, 1, 1, 1, 1)
+        x_seq = self.conv_fc(x_seq)
+        fr = x_seq.mean(0)
+        return fr
+    
