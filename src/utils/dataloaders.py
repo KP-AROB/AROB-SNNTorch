@@ -16,16 +16,17 @@ def load_dataloader(dataset_name: str, dataset_params: dict, useGPU: bool = True
     image_size = dataset_params['image_size']
     batch_size = dataset_params['batch_size']
     channels = dataset_params['channels']
-    mean, std = dataset_params['mean'], dataset_params['std']
-    use_augmentations = dataset_params.get('use_augmentations', True)
 
     n_workers = 4 * torch.cuda.device_count() if useGPU else 2
-
+    
     train_augmentations = [
+        RandAdjustContrast(prob=0.3, gamma=(1, 3)),
+        RandGaussianSmooth(prob=0.1, sigma_x=(0.5, 1.0)),
+        Rand2DElastic(prob=0.3, spacing=(20, 20), magnitude_range=(0, 1)),
         transforms.RandomVerticalFlip(p=0.3),
         transforms.RandomHorizontalFlip(p=0.3),
-        RandRotate90(prob=0.3, max_k=3),
-    ] if use_augmentations else []
+        RandRotate90(prob=0.1),
+    ]
 
     base_transforms = [
         *([transforms.Grayscale()] if channels == 1 else []),
@@ -33,46 +34,31 @@ def load_dataloader(dataset_name: str, dataset_params: dict, useGPU: bool = True
         transforms.ToTensor()
     ]
 
-    normalize_transform = [transforms.Normalize((mean,) if channels == 1 else (mean, mean, mean),
-                                                (std,) if channels == 1 else (std, std, std))]
+    train_transforms = transforms.Compose(base_transforms + train_augmentations)
+    test_transforms = transforms.Compose(base_transforms)
 
-    # Compose transforms for each phase
-    train_transforms = transforms.Compose(
-        base_transforms + train_augmentations + normalize_transform)
-    val_test_transforms = transforms.Compose(
-        base_transforms + normalize_transform)
-
-    # Helper function for dataset instantiation
-    def get_dataset(name, root, is_train):
-        if name == "ImageFolder":
-            return ImageFolder(root=root, transform=train_transforms if is_train else val_test_transforms)
-        return instanciate_cls("torchvision.datasets", name, {
-            'root': root, "train": is_train, "download": True, "transform": train_transforms if is_train else val_test_transforms
-        })
-
-    # Load datasets
     if dataset_name == "ImageFolder":
-        train_dataset = get_dataset(dataset_name, os.path.join(
-            dataset_params['data_dir'], 'train'), True)
-        test_dataset = get_dataset(dataset_name, os.path.join(
-            dataset_params['data_dir'], 'test'), False)
+        train_dataset = ImageFolder(os.path.join(
+            dataset_params['data_dir'], 'train'), transform=train_transforms)
+        test_dataset = ImageFolder(os.path.join(
+            dataset_params['data_dir'], 'test'), transform=test_transforms)
     else:
-        train_dataset = get_dataset(
-            dataset_name, dataset_params['data_dir'], True)
-        test_dataset = get_dataset(
-            dataset_name, dataset_params['data_dir'], False)
+        train_dataset = instanciate_cls(
+            'torchvision.datasets', dataset_name, {"root": dataset_params['data_dir'], "download": True, "train": True,  "transform": test_transforms})
+        test_dataset = instanciate_cls(
+            'torchvision.datasets', dataset_name, {"root": dataset_params['data_dir'], "download": True, "train": False,  "transform": test_transforms})
 
     if hasattr(train_dataset, 'class_to_idx'):
         logging.info(
             f"Available labels in dataset: {train_dataset.class_to_idx}")
 
-    # training_label_counts = Counter(train_dataset.targets)
-    # logging.info('Training class balance : {}'.format(training_label_counts))
-    # total_samples = sum(training_label_counts.values())
-    # class_weights = torch.tensor([total_samples / training_label_counts[cls]
-    #                              for cls in range(len(training_label_counts))], dtype=torch.float).to('cuda' if useGPU else 'cpu')
-    # logging.info('Using class weights : {}'.format(
-    #     class_weights.cpu().numpy()))
+    training_label_counts = Counter(train_dataset.targets)
+    logging.info('Training class balance : {}'.format(training_label_counts))
+    total_samples = sum(training_label_counts.values())
+    class_weights = torch.tensor([total_samples / training_label_counts[cls]
+                                 for cls in range(len(training_label_counts))], dtype=torch.float).to('cuda' if useGPU else 'cpu')
+    logging.info('Using class weights : {}'.format(
+        class_weights.cpu().numpy()))
 
     indices = np.arange(len(train_dataset))
     train_indices, val_indices = train_test_split(
@@ -83,9 +69,11 @@ def load_dataloader(dataset_name: str, dataset_params: dict, useGPU: bool = True
 
     train_loader = DataLoader(tr_dataset, batch_size=batch_size,
                               shuffle=True, pin_memory=useGPU, num_workers=n_workers)
+    
     val_loader = DataLoader(val_dataset, batch_size=batch_size,
-                            shuffle=False, pin_memory=useGPU, num_workers=n_workers)
+                              shuffle=True, pin_memory=useGPU, num_workers=n_workers)
+    
     test_loader = DataLoader(test_dataset, batch_size=batch_size,
                              shuffle=False, pin_memory=useGPU, num_workers=n_workers)
 
-    return train_loader, val_loader, test_loader
+    return train_loader, val_loader, test_loader, class_weights

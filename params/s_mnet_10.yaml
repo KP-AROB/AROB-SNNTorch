@@ -21,9 +21,6 @@ dataset:
     image_size: *image_size
     batch_size: 8
     channels: *n_input
-    mean: 0.5
-    std: 0.5
-    use_augmentations: false
 
 experiment:
   name: SNNExperiment
