@@ -1,6 +1,6 @@
 variables:
-  image_size: &image_size 224
-  n_class: &n_class 4
+  image_size: &image_size 256
+  n_class: &n_class 3
   n_input: &n_input 1
 
 model:
@@ -12,13 +12,15 @@ model:
     in_size: *image_size
 
 dataset:
-  name: ImageFolder
-  module_name: torchvision.datasets
+  name: VindrDicomDataset
+  module_name: src.datasets.custom
   parameters:
-    data_dir: /home/nvidia/Projects/expe_Brad/AROB-CBIS-DDSM-Preparation/data/scan-severity
+    data_dir: /mnt/d/datasets/vindr-mammo/data
     image_size: *image_size
-    batch_size: 64
-    channels: *n_input
+    class_list: ['no_finding', 'suspicious_calcification', 'mass']
+dataloader:
+  parameters:
+    batch_size: 8
 
 experiment:
   name: CNNExperiment
@@ -29,4 +31,4 @@ experiment:
     weight_decay: .0001
     seed: 1234
     log_dir: ./logs
-    suffix: scan_raw
+    suffix:

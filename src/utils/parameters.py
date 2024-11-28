@@ -85,7 +85,7 @@ def load_fnc(module_name: str, func_name):
         raise Exception(f"An error occurred: {e}")
 
 
-def instanciate_cls(module_name: str, class_name: str, params: dict = None):
+def instantiate_cls(module_name: str, class_name: str, params: dict = None):
     """Instantiate a class
 
     Args:

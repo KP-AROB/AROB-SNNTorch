@@ -2,10 +2,10 @@ import torch
 import os
 import logging
 from argparse import ArgumentParser
-from src.utils.dataloaders import load_dataloader
+from src.utils.dataloaders import create_dataloaders
 from torch.utils.tensorboard import SummaryWriter
 from uuid import uuid4
-from src.utils.parameters import write_params_to_file, load_parameters, instanciate_cls
+from src.utils.parameters import write_params_to_file, load_parameters, instantiate_cls
 from src.experiment.base import AbstractExperiment
 
 if __name__ == "__main__":
@@ -47,27 +47,39 @@ if __name__ == "__main__":
 
     # ========== DATALOADER ========== ##
 
-    train_dl, val_dl, test_dl, class_weights = load_dataloader(
+    train_dataset = instantiate_cls(
+        params['dataset']['module_name'],
         params['dataset']['name'],
-        data_params,
-        gpu)
+        {"train": True, **data_params},
+    )
+
+    test_dataset = instantiate_cls(
+        params['dataset']['module_name'],
+        params['dataset']['name'],
+        {"train": False, **data_params},
+    )
+
+    train_dl, test_dl = create_dataloaders(
+        train_dataset,
+        test_dataset,
+        params['dataloader']['parameters'])
 
     logging.info('Dataloaders successfully loaded.')
 
     ## ========== MODEL ========== ##
 
-    model = instanciate_cls(
+    model = instantiate_cls(
         params['model']['module_name'], params['model']['name'], model_params)
     logging.info(f"Model - {model}")
 
     model.to(DEVICE)
 
-    # # # ========== TRAINING ========== ##
+    # # # # ========== TRAINING ========== ##
 
     writer = SummaryWriter(log_dir=log_dir, flush_secs=60)
 
     logging.info(f'Running on device : {DEVICE}')
-    experiment: AbstractExperiment = instanciate_cls(
+    experiment: AbstractExperiment = instantiate_cls(
         params['experiment']['module_name'],
         params['experiment']['name'],
         {
@@ -75,7 +87,7 @@ if __name__ == "__main__":
             "writer": writer,
             "log_interval": log_interval,
             "lr": xp_params['lr'],
-            "class_weights": class_weights,
+            "class_weights": train_dataset.class_weights,
             "weight_decay": xp_params['weight_decay']
         }
     )
