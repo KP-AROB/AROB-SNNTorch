@@ -3,18 +3,20 @@ from .base import AbstractExperiment
 from snntorch import functional as SF
 from tqdm import tqdm
 
+
 class SNNExperiment(AbstractExperiment):
     def __init__(self,
                  model,
                  writer,
                  log_interval,
-                 lr, weight_decay, class_weights = None) -> None:
+                 lr, class_weights, weight_decay) -> None:
         super().__init__(model, writer, log_interval, lr, class_weights, weight_decay)
         self.optimizer = torch.optim.Adam(
             self.model.parameters(),
             lr=lr,
             weight_decay=weight_decay)
-        self.criterion = SF.ce_rate_loss(weight=class_weights)
+        self.criterion = SF.ce_rate_loss(
+            weight=class_weights) if self.class_weights else SF.ce_rate_loss
 
     def train(self, train_loader):
         self.model.train()
@@ -66,4 +68,3 @@ class SNNExperiment(AbstractExperiment):
         test_loss /= len(test_loader)
         test_acc = test_acc / total
         return test_loss, test_acc.item()
-

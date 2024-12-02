@@ -47,6 +47,8 @@ if __name__ == "__main__":
 
     # ========== DATALOADER ========== ##
 
+    logging.info('Loading datasets ...')
+
     train_dataset = instantiate_cls(
         params['dataset']['module_name'],
         params['dataset']['name'],

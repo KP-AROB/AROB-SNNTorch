@@ -1,54 +1,48 @@
 from torch.utils.data import Dataset
 from torchvision import transforms
+from torchvision.datasets import ImageFolder
 from pydicom import dcmread
 from pydicom.pixels import apply_voi_lut
 import numpy as np
 import ast
 import pandas as pd
 import os
-import logging
 import torch
+import cv2
 from monai.transforms import *
 from collections import Counter
+from glob import glob
 
 
 class VindrDicomDataset(Dataset):
     """Vindr Mammo custom PyTorch Dataset"""
 
     def __init__(self,
-                 data_dir,
+                 root,
                  class_list=['no_finding', 'suspicious_calcification', 'mass'],
                  image_size=512,
                  train=True):
         """_summary_
 
         Args:
-            data_dir (str): Path to vindr mammo extracted files
+            root (str): Path to vindr mammo extracted files
             class_list (list, optional): List of classes to keep in the dataset. Defaults to ['no_finding', 'suspicious_calcification', 'mass'].
             image_size (int, optional): Value to resize the images. Defaults to 512.
             train (bool, optional): Boolean to load the train or test split. Defaults to True.
         """
         self.train = train
         self.class_list = class_list
-        self.data_dir = data_dir
-        self.df = self.__prepare_vindr_dataframe(data_dir, class_list)
+        self.data_dir = root
+        self.df = self.__prepare_vindr_dataframe(root, class_list)
         self.targets = self.df['finding_categories'].values
         self.class_weights = self.__get_class_weights()
         self.transform = transforms.Compose([
             transforms.ToTensor(),
             transforms.Resize((image_size, image_size)),
-            RandAdjustContrast(prob=0.3, gamma=(1, 3)),
-            RandGaussianSmooth(prob=0.1, sigma_x=(0.5, 1.0)),
-            Rand2DElastic(prob=0.3, spacing=(20, 20), magnitude_range=(0, 1)),
-            transforms.RandomVerticalFlip(p=0.3),
-            transforms.RandomHorizontalFlip(p=0.3),
-            RandRotate90(prob=0.1),
         ])
 
     def __get_class_weights(self):
         training_label_counts = Counter(self.targets)
-        logging.info('Training class balance : {}'.format(
-            training_label_counts))
         total_samples = sum(training_label_counts.values())
         class_weights = torch.tensor([total_samples / training_label_counts[cls]
                                       for cls in training_label_counts],
@@ -68,6 +62,20 @@ class VindrDicomDataset(Dataset):
         normalized_data = (img2d - np.min(img2d)) / \
             (np.max(img2d) - np.min(img2d))
         return normalized_data
+
+    def __crop_to_breast(self, original):
+        img = (original * 255).astype('uint8')
+        blur = cv2.GaussianBlur(img, (5, 5), 0)
+        _, mask = cv2.threshold(
+            blur, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
+
+        cnts, _ = cv2.findContours(
+            mask.astype(
+                np.uint8), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE
+        )
+        cnt = max(cnts, key=cv2.contourArea)
+        x, y, w, h = cv2.boundingRect(cnt)
+        return original[y: y + h, x: x + w]
 
     def __prepare_vindr_dataframe(self, data_dir, class_list):
 
@@ -111,6 +119,19 @@ class VindrDicomDataset(Dataset):
 
         img = self.__load_dicom_image(sample_path)
         img = (img - img.min()) / (img.max() - img.min() + 1e-8)
+        img = self.__crop_to_breast(img)
         img_tensor = self.transform(img)
         label = self.class_list.index(row['finding_categories'])
         return img_tensor, label
+
+
+class CustomImageFolder(ImageFolder):
+    def __init__(self, root, image_size: int = 256, train: bool = True):
+        root = os.path.join(root, 'train' if train else 'test')
+        super().__init__(root)
+        self.transform = transforms.Compose([
+            transforms.Grayscale(),
+            transforms.ToTensor(),
+            transforms.Resize((image_size, image_size)),
+        ])
+        self.class_weights = None

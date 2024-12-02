@@ -8,9 +8,10 @@ from torchmetrics import Accuracy
 
 
 class CNNExperiment(AbstractExperiment):
-    def __init__(self, model: nn.Module, writer: SummaryWriter, log_interval: int, lr: float, weight_decay: float, class_weights: torch.Tensor):
-        super().__init__(model, writer, log_interval, lr)
-        self.criterion = nn.CrossEntropyLoss(weight=class_weights)
+    def __init__(self, model: nn.Module, writer: SummaryWriter, log_interval: int, lr: float, class_weights: torch.Tensor, weight_decay: float):
+        super().__init__(model, writer, log_interval, lr, class_weights, weight_decay)
+        self.criterion = nn.CrossEntropyLoss(
+            weight=class_weights) if self.class_weights else nn.CrossEntropyLoss()
         self.metric = Accuracy(
             task="multiclass", num_classes=self.model.n_output).to(self.device)
         self.optimizer = optim.NAdam(

@@ -12,15 +12,15 @@ model:
     in_size: *image_size
 
 dataset:
-  name: VindrDicomDataset
+  name: CustomImageFolder
   module_name: src.datasets.custom
   parameters:
-    data_dir: /mnt/d/datasets/vindr-mammo/data
+    root: /mnt/d/datasets/vindr-mammo/data/prepared
     image_size: *image_size
-    class_list: ['no_finding', 'suspicious_calcification', 'mass']
+
 dataloader:
   parameters:
-    batch_size: 8
+    batch_size: 32
 
 experiment:
   name: CNNExperiment

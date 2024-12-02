@@ -16,6 +16,7 @@ class AbstractExperiment(ABC):
         self.log_interval = log_interval
         self.lr = lr
         self.class_weights = class_weights
+        self.weight_decay = weight_decay
         self.device = torch.device(
             "cuda") if torch.cuda.is_available() else torch.device("cpu")
 
@@ -38,7 +39,7 @@ class AbstractExperiment(ABC):
             self.writer.add_scalar('train/loss', train_loss, epoch)
             self.writer.add_scalar('val/acc', val_acc, epoch)
             self.writer.add_scalar('val/loss', val_loss, epoch)
-            
+
             if val_loss < best_val_loss:
                 best_val_loss = val_loss
                 checkpoint = {
