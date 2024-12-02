@@ -5,6 +5,18 @@ from torch.utils.data import Dataset
 from collections import Counter
 
 
+def create_sampler(dataset: Dataset):
+    label_counts = Counter(dataset.targets)
+    class_weights = {label: 1.0 / count for label,
+                     count in label_counts.items()}
+    sample_weights = [class_weights[label]
+                      for _, label in dataset.samples]
+    sample_weights_tensor = torch.FloatTensor(sample_weights)
+    sampler = WeightedRandomSampler(weights=sample_weights_tensor, num_samples=len(
+        sample_weights_tensor), replacement=True)
+    return sampler
+
+
 def create_dataloaders(train_dataset: Dataset, test_dataset: Dataset, dataloader_params: dict):
     """Takes train and testing dataset to return associated Dataloaders
 
@@ -17,20 +29,13 @@ def create_dataloaders(train_dataset: Dataset, test_dataset: Dataset, dataloader
     """
     useGPU = True if torch.cuda.is_available() else False
     n_workers = 4 * torch.cuda.device_count() if useGPU else 2
-
-    label_counts = Counter(train_dataset.targets)
-    class_weights = {label: 1.0 / count for label,
-                     count in label_counts.items()}
-    sample_weights = [class_weights[label]
-                      for _, label in train_dataset.samples]
-    sample_weights_tensor = torch.FloatTensor(sample_weights)
-    sampler = WeightedRandomSampler(weights=sample_weights_tensor, num_samples=len(
-        sample_weights_tensor), replacement=True)
+    train_sampler = create_sampler(train_dataset)
+    test_sampler = create_sampler(test_dataset)
 
     train_loader = DataLoader(train_dataset, batch_size=dataloader_params['batch_size'],
-                              pin_memory=useGPU, num_workers=n_workers, sampler=sampler)
+                              pin_memory=useGPU, num_workers=n_workers, sampler=train_sampler)
 
     test_loader = DataLoader(test_dataset, batch_size=dataloader_params['batch_size'],
-                             pin_memory=useGPU, num_workers=n_workers, sampler=sampler)
+                             pin_memory=useGPU, num_workers=n_workers, sampler=test_sampler)
 
     return train_loader, test_loader
