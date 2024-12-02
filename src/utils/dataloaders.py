@@ -1,7 +1,8 @@
 import torch
-from torch.utils.data import DataLoader
+from torch.utils.data import DataLoader, WeightedRandomSampler
 from monai.transforms import *
 from torch.utils.data import Dataset
+from collections import Counter
 
 
 def create_dataloaders(train_dataset: Dataset, test_dataset: Dataset, dataloader_params: dict):
@@ -17,10 +18,19 @@ def create_dataloaders(train_dataset: Dataset, test_dataset: Dataset, dataloader
     useGPU = True if torch.cuda.is_available() else False
     n_workers = 4 * torch.cuda.device_count() if useGPU else 2
 
+    label_counts = Counter(train_dataset.targets)
+    class_weights = {label: 1.0 / count for label,
+                     count in label_counts.items()}
+    sample_weights = [class_weights[label]
+                      for _, label in train_dataset.samples]
+    sample_weights_tensor = torch.FloatTensor(sample_weights)
+    sampler = WeightedRandomSampler(weights=sample_weights_tensor, num_samples=len(
+        sample_weights_tensor), replacement=True)
+
     train_loader = DataLoader(train_dataset, batch_size=dataloader_params['batch_size'],
-                              shuffle=True, pin_memory=useGPU, num_workers=n_workers)
+                              pin_memory=useGPU, num_workers=n_workers, sampler=sampler)
 
     test_loader = DataLoader(test_dataset, batch_size=dataloader_params['batch_size'],
-                             shuffle=False, pin_memory=useGPU, num_workers=n_workers)
+                             pin_memory=useGPU, num_workers=n_workers, sampler=sampler)
 
     return train_loader, test_loader

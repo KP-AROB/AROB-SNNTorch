@@ -7,6 +7,7 @@ from torch.utils.tensorboard import SummaryWriter
 from uuid import uuid4
 from src.utils.parameters import write_params_to_file, load_parameters, instantiate_cls
 from src.experiment.base import AbstractExperiment
+from collections import Counter
 
 if __name__ == "__main__":
 
@@ -68,7 +69,7 @@ if __name__ == "__main__":
 
     logging.info('Dataloaders successfully loaded.')
 
-    ## ========== MODEL ========== ##
+    # ## ========== MODEL ========== ##
 
     model = instantiate_cls(
         params['model']['module_name'], params['model']['name'], model_params)
@@ -76,7 +77,7 @@ if __name__ == "__main__":
 
     model.to(DEVICE)
 
-    # # # # ========== TRAINING ========== ##
+    # # # # # ========== TRAINING ========== ##
 
     writer = SummaryWriter(log_dir=log_dir, flush_secs=60)
 
@@ -89,7 +90,6 @@ if __name__ == "__main__":
             "writer": writer,
             "log_interval": log_interval,
             "lr": xp_params['lr'],
-            "class_weights": train_dataset.class_weights,
             "weight_decay": xp_params['weight_decay']
         }
     )

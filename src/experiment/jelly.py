@@ -12,8 +12,8 @@ class SJellyExperiment(AbstractExperiment):
                  model,
                  writer,
                  log_interval,
-                 lr, class_weights, weight_decay) -> None:
-        super().__init__(model, writer, log_interval, lr, class_weights, weight_decay)
+                 lr, weight_decay) -> None:
+        super().__init__(model, writer, log_interval, lr, weight_decay)
         self.optimizer = torch.optim.SGD(
             self.model.parameters(),
             lr=lr,
@@ -22,7 +22,7 @@ class SJellyExperiment(AbstractExperiment):
         if self.model.n_output == 2:
             self.criterion = torch.nn.BCELoss()
         else:
-            self.criterion = torch.nn.CrossEntropyLoss(weight=class_weights)
+            self.criterion = torch.nn.CrossEntropyLoss()
 
         np.int = np.int64
 

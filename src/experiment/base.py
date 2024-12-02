@@ -9,13 +9,12 @@ from torch.utils.data import DataLoader
 
 class AbstractExperiment(ABC):
 
-    def __init__(self, model: torch.nn.Module, writer: SummaryWriter, log_interval: int, lr: float, class_weights: torch.Tensor = None, weight_decay: float = 0) -> None:
+    def __init__(self, model: torch.nn.Module, writer: SummaryWriter, log_interval: int, lr: float, weight_decay: float = 0) -> None:
         super().__init__()
         self.model = model
         self.writer = writer
         self.log_interval = log_interval
         self.lr = lr
-        self.class_weights = class_weights
         self.weight_decay = weight_decay
         self.device = torch.device(
             "cuda") if torch.cuda.is_available() else torch.device("cpu")

@@ -9,14 +9,13 @@ class SNNExperiment(AbstractExperiment):
                  model,
                  writer,
                  log_interval,
-                 lr, class_weights, weight_decay) -> None:
-        super().__init__(model, writer, log_interval, lr, class_weights, weight_decay)
+                 lr, weight_decay) -> None:
+        super().__init__(model, writer, log_interval, lr, weight_decay)
         self.optimizer = torch.optim.Adam(
             self.model.parameters(),
             lr=lr,
             weight_decay=weight_decay)
-        self.criterion = SF.ce_rate_loss(
-            weight=class_weights) if self.class_weights else SF.ce_rate_loss
+        self.criterion = SF.ce_rate_loss
 
     def train(self, train_loader):
         self.model.train()
