@@ -4,7 +4,7 @@ variables:
   n_input: &n_input 1
 
 model:
-  name: VGG16
+  name: VGG11
   module_name: src.models.torch
   parameters:
     n_input: *n_input

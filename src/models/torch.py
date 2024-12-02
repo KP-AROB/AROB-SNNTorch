@@ -1,5 +1,33 @@
 from torch import nn
 import torch.nn.functional as F
+from src.utils.net import make_vgg_conv_block
+
+
+class VGG11(nn.Module):
+    def __init__(self, n_input=3, n_output=4, in_size=224):
+        super(VGG11, self).__init__()
+        config = [64, 'M', 128, 'M', 256, 256,
+                  'M', 512, 512, 'M', 512, 512, 'M']
+
+        self.n_input = n_input
+        self.n_output = n_output
+        self.in_size = in_size
+
+        self.net = make_vgg_conv_block(config, self.n_input)
+        self.classifier = nn.Sequential(
+            nn.Flatten(),
+            nn.Linear(7*7*512, 1028),
+            nn.ReLU(),
+            nn.Dropout(0.5),
+            nn.Linear(1028, 1028),
+            nn.ReLU(),
+            nn.Linear(1028, self.n_output)
+        )
+
+    def forward(self, x):
+        x = self.net(x)
+        x = self.classifier(x)
+        return x
 
 
 class VGG16(nn.Module):
@@ -12,10 +40,9 @@ class VGG16(nn.Module):
         self.n_output = n_output
         self.in_size = in_size
 
-        self.net = self._make_layers(config)
+        self.net = make_vgg_conv_block(config, self.n_input)
         self.classifier = nn.Sequential(
             nn.Flatten(),
-            nn.Dropout(0.5),
             nn.Linear(7*7*512, 4096),
             nn.ReLU(),
             nn.Dropout(0.5),
@@ -23,22 +50,6 @@ class VGG16(nn.Module):
             nn.ReLU(),
             nn.Linear(4096, self.n_output)
         )
-
-    def _make_layers(self, cfg):
-        layers = []
-        in_channels = self.n_input
-
-        for x in cfg:
-            if x == 'M':
-                layers += [nn.MaxPool2d(2, 2)]
-            else:
-                layers += [nn.Conv2d(in_channels, x, kernel_size=3, padding=1),
-                           nn.BatchNorm2d(x),
-                           nn.ReLU()
-                           ]
-                in_channels = x
-        layers += [nn.Flatten()]
-        return nn.Sequential(*layers)
 
     def forward(self, x):
         x = self.net(x)
