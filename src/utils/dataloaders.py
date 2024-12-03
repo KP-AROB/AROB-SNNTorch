@@ -30,12 +30,11 @@ def create_dataloaders(train_dataset: Dataset, test_dataset: Dataset, dataloader
     useGPU = True if torch.cuda.is_available() else False
     n_workers = 4 * torch.cuda.device_count() if useGPU else 2
     train_sampler = create_sampler(train_dataset)
-    test_sampler = create_sampler(test_dataset)
 
     train_loader = DataLoader(train_dataset, batch_size=dataloader_params['batch_size'],
                               pin_memory=useGPU, num_workers=n_workers, sampler=train_sampler)
 
     test_loader = DataLoader(test_dataset, batch_size=dataloader_params['batch_size'],
-                             pin_memory=useGPU, num_workers=n_workers, sampler=test_sampler)
+                             pin_memory=useGPU, num_workers=n_workers, shuffle=False)
 
     return train_loader, test_loader

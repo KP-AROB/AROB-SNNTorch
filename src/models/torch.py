@@ -16,12 +16,12 @@ class VGG11(nn.Module):
         self.net = make_vgg_conv_block(config, self.n_input)
         self.classifier = nn.Sequential(
             nn.Flatten(),
-            nn.Linear(7*7*512, 1028),
+            nn.Linear(7*7*512, 512),
             nn.ReLU(),
             nn.Dropout(0.5),
-            nn.Linear(1028, 1028),
+            nn.Linear(512, 1024),
             nn.ReLU(),
-            nn.Linear(1028, self.n_output)
+            nn.Linear(1024, self.n_output)
         )
 
     def forward(self, x):
@@ -87,7 +87,7 @@ class MNET10(nn.Module):
         x = self.pool(self.prelu(self.conv3(x)))
         x = self.pool(self.prelu(self.conv4(x)))
         x = self.flatten(x)
-        x = F.relu(self.fc1(x))
+        x = self.prelu(self.fc1(x))
         x = self.dropout(x)
         x = self.fc2(x)
         return x

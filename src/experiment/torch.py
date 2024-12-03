@@ -11,10 +11,9 @@ class CNNExperiment(AbstractExperiment):
     def __init__(self, model: nn.Module, writer: SummaryWriter, log_interval: int, lr: float, weight_decay: float):
         super().__init__(model, writer, log_interval, lr, weight_decay)
         self.criterion = nn.CrossEntropyLoss()
-        self.metric = Accuracy(
-            task="multiclass", num_classes=self.model.n_output).to(self.device)
-        self.optimizer = optim.NAdam(
+        self.optimizer = optim.Adam(
             model.parameters(), lr=lr, weight_decay=weight_decay)
+        self.acc = Accuracy(task='multiclass', num_classes=self.model.n_output)
 
     def train(self, train_loader):
         self.model.train()
@@ -32,14 +31,16 @@ class CNNExperiment(AbstractExperiment):
                 self.optimizer.step()
 
                 train_loss += loss.item()
-                train_preds.append(torch.argmax(outputs, dim=1).cpu())
+                train_preds.append(outputs.cpu())
                 train_labels.append(labels.cpu())
                 pbar.update(1)
 
         train_loss /= len(train_loader)
-        train_acc = self.metric(torch.cat(train_preds),
-                                torch.cat(train_labels))
-        return train_loss, train_acc.item()
+        train_preds = torch.concat(train_preds)
+        train_labels = torch.concat(train_labels)
+        train_metrics = self.compute_metrics(
+            train_preds, train_labels, 'train')
+        return train_loss, train_metrics
 
     def test(self, test_loader):
         self.model.eval()
@@ -56,10 +57,14 @@ class CNNExperiment(AbstractExperiment):
                     loss = self.criterion(outputs, labels)
                     test_loss += loss.item()
 
-                    test_preds.append(torch.argmax(outputs, dim=1).cpu())
+                    test_preds.append(outputs.cpu())
                     test_labels.append(labels.cpu())
                     pbar.update(1)
 
         test_loss /= len(test_loader)
-        test_acc = self.metric(torch.cat(test_preds), torch.cat(test_labels))
-        return test_loss, test_acc.item()
+        test_preds = torch.concat(test_preds)
+        test_labels = torch.concat(test_labels)
+
+        test_metrics = self.compute_metrics(
+            test_preds, test_labels, 'val')
+        return test_loss, test_metrics

@@ -18,7 +18,7 @@ if __name__ == "__main__":
     )
 
     parser = ArgumentParser()
-    parser.add_argument("--params", type=str, default='./params/mnist.yaml')
+    parser.add_argument("--params", type=str, default='./params/mnet10.yaml')
     args = parser.parse_args()
     params = load_parameters(args.params)
 

@@ -36,7 +36,6 @@ def plot_classes_preds(net, images, labels, classes):
     Uses the "images_to_probs" function.
     '''
     preds, probs = images_to_probs(net, images)
-    print(images.shape)
     fig = plt.figure(figsize=(10, 10))
     for idx in np.arange(4):
         ax = fig.add_subplot(1, 4, idx+1, xticks=[], yticks=[])
