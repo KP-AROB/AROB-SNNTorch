@@ -2,17 +2,15 @@ from torch.utils.tensorboard import SummaryWriter
 from .base import AbstractExperiment
 from tqdm import tqdm
 from torch import nn
-import torch.optim as optim
 import torch
 from torchmetrics import Accuracy
 
 
 class CNNExperiment(AbstractExperiment):
-    def __init__(self, model: nn.Module, writer: SummaryWriter, log_interval: int, lr: float, weight_decay: float):
-        super().__init__(model, writer, log_interval, lr, weight_decay)
+    def __init__(self, model: nn.Module, writer: SummaryWriter, log_interval: int, lr: float, early_stopping_patience: int, weight_decay: float):
+        super().__init__(model, writer, log_interval,
+                         lr, early_stopping_patience, weight_decay)
         self.criterion = nn.CrossEntropyLoss()
-        self.optimizer = optim.Adam(
-            model.parameters(), lr=lr, weight_decay=weight_decay)
         self.acc = Accuracy(task='multiclass', num_classes=self.model.n_output)
 
     def train(self, train_loader):

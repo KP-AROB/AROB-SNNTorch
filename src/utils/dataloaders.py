@@ -10,7 +10,7 @@ def create_sampler(dataset: Dataset):
     class_weights = {label: 1.0 / count for label,
                      count in label_counts.items()}
     sample_weights = [class_weights[label]
-                      for _, label in dataset.samples]
+                      for label in dataset.targets]
     sample_weights_tensor = torch.FloatTensor(sample_weights)
     sampler = WeightedRandomSampler(weights=sample_weights_tensor, num_samples=len(
         sample_weights_tensor), replacement=True)

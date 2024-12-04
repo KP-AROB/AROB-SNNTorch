@@ -7,7 +7,10 @@ from torch.utils.tensorboard import SummaryWriter
 from uuid import uuid4
 from src.utils.parameters import write_params_to_file, load_parameters, instantiate_cls
 from src.experiment.base import AbstractExperiment
-from collections import Counter
+from sklearn.model_selection import KFold
+import numpy as np
+from torch.utils.data import Subset, WeightedRandomSampler, DataLoader
+from sklearn.utils.class_weight import compute_class_weight
 
 if __name__ == "__main__":
 
@@ -37,7 +40,7 @@ if __name__ == "__main__":
         torch.manual_seed(xp_params["seed"])
 
     experiment_id = str(uuid4())[:4]
-    experiment_name = f"{params['model']['name']}_{experiment_id}_{xp_params['suffix']}"
+    experiment_name = f"{params['model']['name']}_{experiment_id}"
     logging.info(
         'Initialization of the experiment protocol - {}'.format(experiment_name))
     log_dir = os.path.join(
@@ -46,7 +49,7 @@ if __name__ == "__main__":
     write_params_to_file(params, log_dir)
     log_interval = 100
 
-    # ========== DATALOADER ========== ##
+    # ========== DATASET ========== ##
 
     logging.info('Loading datasets ...')
 
@@ -56,20 +59,7 @@ if __name__ == "__main__":
         {"train": True, **data_params},
     )
 
-    test_dataset = instantiate_cls(
-        params['dataset']['module_name'],
-        params['dataset']['name'],
-        {"train": False, **data_params},
-    )
-
-    train_dl, test_dl = create_dataloaders(
-        train_dataset,
-        test_dataset,
-        params['dataloader']['parameters'])
-
-    logging.info('Dataloaders successfully loaded.')
-
-    # ## ========== MODEL ========== ##
+    # ========== MODEL ========== ##
 
     model = instantiate_cls(
         params['model']['module_name'], params['model']['name'], model_params)
@@ -77,7 +67,7 @@ if __name__ == "__main__":
 
     model.to(DEVICE)
 
-    # # # # # ========== TRAINING ========== ##
+    # ========== TRAINING ========== ##
 
     writer = SummaryWriter(log_dir=log_dir, flush_secs=60)
 
@@ -90,8 +80,43 @@ if __name__ == "__main__":
             "writer": writer,
             "log_interval": log_interval,
             "lr": xp_params['lr'],
-            "weight_decay": xp_params['weight_decay']
+            "weight_decay": xp_params['weight_decay'],
+            "early_stopping_patience": xp_params['early_stopping_patience']
         }
     )
 
-    experiment.fit(train_dl, test_dl, xp_params['num_epochs'])
+    if xp_params['k_fold'] > 1:
+        kf = KFold(n_splits=xp_params['k_fold'], shuffle=True, random_state=42)
+        for fold, (train_idx, val_idx) in enumerate(kf.split(np.arange(len(train_dataset)))):
+            logging.info(f"Fold {fold+1}/{kf.get_n_splits()}")
+            train_subset = Subset(train_dataset, train_idx)
+            val_subset = Subset(train_dataset, val_idx)
+
+            targets = np.array([train_dataset.targets[i] for i in train_idx])
+            class_weights = compute_class_weight(
+                'balanced', classes=np.unique(targets), y=targets)
+            class_weights = torch.tensor(class_weights, dtype=torch.float)
+
+            sample_weights = class_weights[targets]
+            sampler = WeightedRandomSampler(
+                sample_weights, num_samples=len(sample_weights), replacement=True)
+
+            train_dl = DataLoader(
+                train_subset, batch_size=params['dataloader']['parameters']['batch_size'], sampler=sampler)
+            val_dl = DataLoader(
+                val_subset, batch_size=params['dataloader']['parameters']['batch_size'], shuffle=False)
+
+            experiment.fit(train_dl, val_dl, xp_params['num_epochs'], fold)
+    else:
+        val_dataset = instantiate_cls(
+            params['dataset']['module_name'],
+            params['dataset']['name'],
+            {"train": False, **data_params},
+        )
+
+        train_dl, val_dl = create_dataloaders(
+            train_dataset,
+            val_dataset,
+            params['dataloader']['parameters'])
+
+        experiment.fit(train_dl, val_dl, xp_params['num_epochs'])
