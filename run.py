@@ -80,7 +80,8 @@ if __name__ == "__main__":
             "writer": writer,
             "log_interval": log_interval,
             "lr": xp_params['lr'],
-            "weight_decay": xp_params['weight_decay']
+            "weight_decay": xp_params['weight_decay'],
+            "early_stopping_patience": xp_params['early_stopping_patience']
         }
     )
 
@@ -105,7 +106,7 @@ if __name__ == "__main__":
             val_dl = DataLoader(
                 val_subset, batch_size=params['dataloader']['parameters']['batch_size'], shuffle=False)
 
-            experiment.fit(train_dl, val_dl, xp_params['num_epochs'])
+            experiment.fit(train_dl, val_dl, xp_params['num_epochs'], fold)
     else:
         val_dataset = instantiate_cls(
             params['dataset']['module_name'],

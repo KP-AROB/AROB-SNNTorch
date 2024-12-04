@@ -27,8 +27,9 @@ experiment:
   module_name: src.experiment.torch
   parameters:
     num_epochs: 50
-    lr: .0001
+    lr: .001
     weight_decay: 0.0001
     seed: 1234
     log_dir: ./logs
     k_fold: 0
+    early_stopping_patience: 10

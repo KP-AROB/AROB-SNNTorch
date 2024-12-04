@@ -79,7 +79,7 @@ class MNET10(nn.Module):
         self.flatten = nn.Flatten()
         self.fc1 = nn.Linear(fc_size * fc_size * 64, 512)
         self.fc2 = nn.Linear(512, n_output)
-        self.dropout = nn.Dropout(0.5)
+        self.dropout = nn.Dropout(0.4)
         self.ic_drop = nn.Dropout(0.01)
         self.pool = nn.MaxPool2d(2, 2)
 
