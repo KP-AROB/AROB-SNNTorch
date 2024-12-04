@@ -20,14 +20,14 @@ dataset:
 
 dataloader:
   parameters:
-    batch_size: 64
+    batch_size: 32
 
 experiment:
   name: CNNExperiment
   module_name: src.experiment.torch
   parameters:
-    num_epochs: 50
-    lr: .001
+    num_epochs: 30
+    lr: .0008
     weight_decay: 0.0001
     seed: 1234
     log_dir: ./logs

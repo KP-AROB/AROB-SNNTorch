@@ -11,7 +11,6 @@ class CNNExperiment(AbstractExperiment):
         super().__init__(model, writer, log_interval,
                          lr, early_stopping_patience, weight_decay)
         self.criterion = nn.CrossEntropyLoss()
-        self.acc = Accuracy(task='multiclass', num_classes=self.model.n_output)
 
     def train(self, train_loader):
         self.model.train()

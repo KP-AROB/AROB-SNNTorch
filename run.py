@@ -2,6 +2,9 @@ import torch
 import os
 import logging
 from argparse import ArgumentParser
+
+import torch.utils
+import torch.utils.data
 from src.utils.dataloaders import create_dataloaders
 from torch.utils.tensorboard import SummaryWriter
 from uuid import uuid4
@@ -11,6 +14,7 @@ from sklearn.model_selection import KFold
 import numpy as np
 from torch.utils.data import Subset, WeightedRandomSampler, DataLoader
 from sklearn.utils.class_weight import compute_class_weight
+from torchvision import transforms
 
 if __name__ == "__main__":
 
@@ -58,6 +62,20 @@ if __name__ == "__main__":
         params['dataset']['name'],
         {"train": True, **data_params},
     )
+
+    val_dataset = instantiate_cls(
+        params['dataset']['module_name'],
+        params['dataset']['name'],
+        {"train": False, **data_params},
+    )
+
+    if params['dataset']['module_name'] != 'src.datasets.custom':
+        train_dataset.transform = transforms.Compose([
+            transforms.ToTensor(),
+        ])
+        val_dataset.transform = transforms.Compose([
+            transforms.ToTensor(),
+        ])
 
     # ========== MODEL ========== ##
 
@@ -108,12 +126,6 @@ if __name__ == "__main__":
 
             experiment.fit(train_dl, val_dl, xp_params['num_epochs'], fold)
     else:
-        val_dataset = instantiate_cls(
-            params['dataset']['module_name'],
-            params['dataset']['name'],
-            {"train": False, **data_params},
-        )
-
         train_dl, val_dl = create_dataloaders(
             train_dataset,
             val_dataset,

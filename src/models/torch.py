@@ -62,31 +62,29 @@ class MNET10(nn.Module):
         self.n_output = n_output
         self.in_size = in_size
         k_size = 3
-        n_conv = 3
+        n_conv = 5
         fc_size = int(
             (in_size - n_conv * k_size + 1 * n_conv) / 2**n_conv) - 1
 
         self.conv1 = nn.Conv2d(n_input, 16, k_size)
-        self.norm1 = nn.BatchNorm2d(16)
-
         self.conv2 = nn.Conv2d(16, 32, k_size)
-        self.norm2 = nn.BatchNorm2d(32)
-
-        self.conv3 = nn.Conv2d(32, 64, k_size)
-        self.norm3 = nn.BatchNorm2d(64)
+        self.conv3 = nn.Conv2d(32, 32, k_size)
+        self.conv4 = nn.Conv2d(32, 64, k_size)
+        self.conv5 = nn.Conv2d(64, 64, k_size)
 
         self.activation = nn.LeakyReLU()
         self.flatten = nn.Flatten()
         self.fc1 = nn.Linear(fc_size * fc_size * 64, 512)
         self.fc2 = nn.Linear(512, n_output)
-        self.dropout = nn.Dropout(0.4)
-        self.ic_drop = nn.Dropout(0.01)
+        self.dropout = nn.Dropout(0.5)
         self.pool = nn.MaxPool2d(2, 2)
 
     def forward(self, x):
-        x = self.pool(self.norm1(self.activation(self.conv1(x))))
-        x = self.pool(self.norm2(self.activation(self.conv2(x))))
-        x = self.pool(self.norm3(self.activation(self.conv3(x))))
+        x = self.pool(self.activation(self.conv1(x)))
+        x = self.pool(self.activation(self.conv2(x)))
+        x = self.pool(self.activation(self.conv3(x)))
+        x = self.pool(self.activation(self.conv4(x)))
+        x = self.pool(self.activation(self.conv5(x)))
         x = self.flatten(x)
         x = self.activation(self.fc1(x))
         x = self.dropout(x)

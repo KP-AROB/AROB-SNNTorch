@@ -14,8 +14,6 @@ class CustomImageFolder(ImageFolder):
                 transforms=[transforms.ColorJitter(brightness=0.2, contrast=0.2)], p=0.5),
             transforms.RandomApply(transforms=[transforms.RandomAffine(
                 degrees=10, scale=(0.9, 1.1))], p=0.5),
-            transforms.RandomApply(
-                transforms=[transforms.RandomRotation(degrees=15)], p=0.3),
         ]
 
         self.transform = transforms.Compose([

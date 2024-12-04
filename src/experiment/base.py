@@ -7,7 +7,7 @@ from abc import ABC, abstractmethod
 from torch.utils.data import DataLoader
 from torchmetrics import F1Score, AUROC, Recall, Specificity, Accuracy
 from src.utils.optimisation import EarlyStopping
-from torch.optim.lr_scheduler import ReduceLROnPlateau
+from torch.optim.lr_scheduler import ExponentialLR
 import torch.optim as optim
 
 
@@ -34,13 +34,9 @@ class AbstractExperiment(ABC):
         self.early_stopping = EarlyStopping(
             patience=early_stopping_patience, verbose=True)
 
-        # TODO: add to parameter file
-
         self.optimizer = optim.Adam(
             self.model.parameters(), lr=self.lr, weight_decay=self.weight_decay)
-
-        self.lr_scheduler = ReduceLROnPlateau(
-            self.optimizer, mode='min', patience=3)
+        self.lr_scheduler = ExponentialLR(self.optimizer, gamma=0.98)
 
     @abstractmethod
     def train(self, dl: DataLoader):
@@ -73,15 +69,18 @@ class AbstractExperiment(ABC):
             val_loss, val_metrics = self.test(val_loader)
             self.log_metrics(train_loss, val_loss,
                              train_metrics, val_metrics, epoch, scalar_prefix)
-            self.lr_scheduler.step(val_loss)
+            self.lr_scheduler.step()
             self.early_stopping(self.model, epoch,
                                 val_loss, self.writer.log_dir)
 
             logging.info(
-                f"Epoch {epoch+1} / {num_epochs} - LR : {self.lr_scheduler.get_last_lr()[0]} Train/Val Acc: {train_metrics['train/acc']:.4f} | {val_metrics['val/acc']:4f}, Train/Val Loss: {train_loss:.4f} | {val_loss:4f}")
+                f"Epoch {epoch+1} / {num_epochs} - LR : {self.lr_scheduler.get_last_lr()[0]:6f} Train/Val Acc: {train_metrics['train/acc']:.4f} | {val_metrics['val/acc']:4f}, Train/Val Loss: {train_loss:.4f} | {val_loss:4f}")
 
             if self.early_stopping.early_stop:
                 logging.info(
                     f"Val loss did not improve for {self.early_stopping.patience} epochs.")
                 logging.info('Training stopped by early stopping mecanism.')
                 break
+
+        with open(self.writer.log_dir + '/parameters.txt', "a") as file:
+            file.write(f"\n{self.model}\n")
