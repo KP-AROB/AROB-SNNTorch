@@ -3,7 +3,6 @@ from .base import AbstractExperiment
 from tqdm import tqdm
 from torch import nn
 import torch
-from torchmetrics import Accuracy
 
 
 class CNNExperiment(AbstractExperiment):

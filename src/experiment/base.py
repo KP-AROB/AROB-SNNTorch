@@ -65,6 +65,9 @@ class AbstractExperiment(ABC):
 
     def fit(self, train_loader, val_loader, num_epochs, fold=None):
         scalar_prefix = f'fold_{fold}' if fold else None
+        with open(self.writer.log_dir + '/parameters.txt', "a") as file:
+            file.write(f"\n{self.model}\n")
+
         for epoch in range(num_epochs):
             train_loss, train_metrics = self.train(train_loader)
             val_loss, val_metrics = self.test(val_loader)
@@ -82,6 +85,3 @@ class AbstractExperiment(ABC):
                     f"Val loss did not improve for {self.early_stopping.patience} epochs.")
                 logging.info('Training stopped by early stopping mecanism.')
                 break
-
-        with open(self.writer.log_dir + '/parameters.txt', "a") as file:
-            file.write(f"\n{self.model}\n")

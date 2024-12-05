@@ -14,7 +14,7 @@ from collections import Counter
 
 
 class CustomImageFolder(ImageFolder):
-    def __init__(self, root, image_size: int = 256, train: bool = True, augment_type: str = None):
+    def __init__(self, root, image_size: int = 224, train: bool = True, augment_type: str = None):
         root = os.path.join(root, 'train' if train else 'test')
         super().__init__(root)
 
@@ -22,15 +22,15 @@ class CustomImageFolder(ImageFolder):
             raise ValueError('augment_type must be of {}'.format(augment_type))
 
         geometric_augmentation = [
-            transforms.RandomHorizontalFlip(p=0.5),
-            transforms.RandomVerticalFlip(p=0.5),
+            transforms.RandomHorizontalFlip(p=0.3),
+            transforms.RandomVerticalFlip(p=0.3),
             transforms.RandomApply(
                 transforms=[transforms.RandomRotation(90)], p=0.3),
         ]
 
         photometric_augmentation = [
-            RandAdjustContrast(prob=0.3, gamma=(1, 3)),
-            RandGaussianSmooth(prob=0.3, sigma_x=(0.25, 0.8)),
+            RandAdjustContrast(prob=0.3, gamma=(1, 2)),
+            RandGaussianSmooth(prob=0.3, sigma_x=(0.25, 0.5)),
         ]
 
         self.transform = transforms.Compose([

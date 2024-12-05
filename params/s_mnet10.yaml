@@ -4,12 +4,12 @@ variables:
   n_input: &n_input 1
 
 model:
-  name: MNET10
-  module_name: src.models.torch
+  name: SpikingMNET10
+  module_name: src.models.jelly
   parameters:
-    n_input: *n_input
+    input_shape: !!python/tuple [*n_input, *image_size, *image_size]
     n_output: *n_class
-    in_size: *image_size
+    n_steps: 5
 
 dataset:
   name: CustomImageFolder
@@ -24,8 +24,8 @@ dataloader:
     batch_size: 32
 
 experiment:
-  name: CNNExperiment
-  module_name: src.experiment.torch
+  name: SJellyExperiment
+  module_name: src.experiment.jellys
   parameters:
     num_epochs: 80
     lr: .0001

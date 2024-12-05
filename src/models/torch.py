@@ -67,6 +67,7 @@ class MNET10(nn.Module):
             nn.Conv2d(n_input, 16, k_size),
             nn.LeakyReLU(),
             nn.BatchNorm2d(16),
+            nn.Dropout(0.05),
             nn.MaxPool2d(2)
         )
 
@@ -74,6 +75,7 @@ class MNET10(nn.Module):
             nn.Conv2d(16, 32, k_size),
             nn.LeakyReLU(),
             nn.BatchNorm2d(32),
+            nn.Dropout(0.05),
             nn.MaxPool2d(2)
         )
 
@@ -81,12 +83,21 @@ class MNET10(nn.Module):
             nn.Conv2d(32, 64, k_size),
             nn.LeakyReLU(),
             nn.BatchNorm2d(64),
+            nn.Dropout(0.05),
+            nn.MaxPool2d(2)
+        )
+
+        self.block4 = nn.Sequential(
+            nn.Conv2d(64, 64, k_size),
+            nn.LeakyReLU(),
+            nn.BatchNorm2d(64),
+            nn.Dropout(0.05),
             nn.MaxPool2d(2)
         )
 
         self.classifier = nn.Sequential(
             nn.Flatten(),
-            nn.Linear(26 * 26 * 64, 512),
+            nn.Linear(12 * 12 * 64, 512),
             nn.LeakyReLU(),
             nn.Dropout(0.5),
             nn.Linear(512, n_output)
@@ -96,5 +107,6 @@ class MNET10(nn.Module):
         x = self.block1(x)
         x = self.block2(x)
         x = self.block3(x)
+        x = self.block4(x)
         x = self.classifier(x)
         return x
