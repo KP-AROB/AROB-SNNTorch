@@ -10,7 +10,11 @@ class CNNExperiment(AbstractExperiment):
     def __init__(self, model: nn.Module, writer: SummaryWriter, log_interval: int, lr: float, early_stopping_patience: int, weight_decay: float):
         super().__init__(model, writer, log_interval,
                          lr, early_stopping_patience, weight_decay)
-        self.criterion = nn.CrossEntropyLoss()
+
+        if self.model.n_output == 2:
+            self.criterion = nn.BCELoss()
+        else:
+            self.criterion = nn.CrossEntropyLoss(label_smoothing=0.1)
 
     def train(self, train_loader):
         self.model.train()

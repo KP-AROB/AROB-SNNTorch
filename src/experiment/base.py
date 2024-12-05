@@ -7,7 +7,7 @@ from abc import ABC, abstractmethod
 from torch.utils.data import DataLoader
 from torchmetrics import F1Score, AUROC, Recall, Specificity, Accuracy
 from src.utils.optimisation import EarlyStopping
-from torch.optim.lr_scheduler import ExponentialLR
+from torch.optim.lr_scheduler import ExponentialLR, ReduceLROnPlateau
 import torch.optim as optim
 
 
@@ -24,19 +24,20 @@ class AbstractExperiment(ABC):
         self.device = torch.device(
             "cuda") if torch.cuda.is_available() else torch.device("cpu")
 
+        metric_task = 'binary' if self.model.n_output == 2 else 'multiclass'
         self.metrics = {
-            'acc': Accuracy(task='multiclass', num_classes=self.model.n_output),
-            'recall': Recall(task='multiclass', num_classes=self.model.n_output),
-            'f1': F1Score(task='multiclass', num_classes=self.model.n_output),
-            'auroc': AUROC(task='multiclass', num_classes=self.model.n_output),
-            'specificity': Specificity(task='multiclass', num_classes=self.model.n_output),
+            'acc': Accuracy(task=metric_task, num_classes=self.model.n_output),
+            'recall': Recall(task=metric_task, num_classes=self.model.n_output),
+            'f1': F1Score(task=metric_task, num_classes=self.model.n_output),
+            'auroc': AUROC(task=metric_task, num_classes=self.model.n_output),
+            'specificity': Specificity(task=metric_task, num_classes=self.model.n_output),
         }
         self.early_stopping = EarlyStopping(
             patience=early_stopping_patience, verbose=True)
 
         self.optimizer = optim.Adam(
             self.model.parameters(), lr=self.lr, weight_decay=self.weight_decay)
-        self.lr_scheduler = ExponentialLR(self.optimizer, gamma=0.98)
+        self.lr_scheduler = ReduceLROnPlateau(self.optimizer)
 
     @abstractmethod
     def train(self, dl: DataLoader):
@@ -69,7 +70,7 @@ class AbstractExperiment(ABC):
             val_loss, val_metrics = self.test(val_loader)
             self.log_metrics(train_loss, val_loss,
                              train_metrics, val_metrics, epoch, scalar_prefix)
-            self.lr_scheduler.step()
+            self.lr_scheduler.step(val_loss)
             self.early_stopping(self.model, epoch,
                                 val_loss, self.writer.log_dir)
 

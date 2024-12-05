@@ -62,31 +62,39 @@ class MNET10(nn.Module):
         self.n_output = n_output
         self.in_size = in_size
         k_size = 3
-        n_conv = 5
-        fc_size = int(
-            (in_size - n_conv * k_size + 1 * n_conv) / 2**n_conv) - 1
 
-        self.conv1 = nn.Conv2d(n_input, 16, k_size)
-        self.conv2 = nn.Conv2d(16, 32, k_size)
-        self.conv3 = nn.Conv2d(32, 32, k_size)
-        self.conv4 = nn.Conv2d(32, 64, k_size)
-        self.conv5 = nn.Conv2d(64, 64, k_size)
+        self.block1 = nn.Sequential(
+            nn.Conv2d(n_input, 16, k_size),
+            nn.LeakyReLU(),
+            nn.BatchNorm2d(16),
+            nn.MaxPool2d(2)
+        )
 
-        self.activation = nn.LeakyReLU()
-        self.flatten = nn.Flatten()
-        self.fc1 = nn.Linear(fc_size * fc_size * 64, 512)
-        self.fc2 = nn.Linear(512, n_output)
-        self.dropout = nn.Dropout(0.5)
-        self.pool = nn.MaxPool2d(2, 2)
+        self.block2 = nn.Sequential(
+            nn.Conv2d(16, 32, k_size),
+            nn.LeakyReLU(),
+            nn.BatchNorm2d(32),
+            nn.MaxPool2d(2)
+        )
+
+        self.block3 = nn.Sequential(
+            nn.Conv2d(32, 64, k_size),
+            nn.LeakyReLU(),
+            nn.BatchNorm2d(64),
+            nn.MaxPool2d(2)
+        )
+
+        self.classifier = nn.Sequential(
+            nn.Flatten(),
+            nn.Linear(26 * 26 * 64, 512),
+            nn.LeakyReLU(),
+            nn.Dropout(0.5),
+            nn.Linear(512, n_output)
+        )
 
     def forward(self, x):
-        x = self.pool(self.activation(self.conv1(x)))
-        x = self.pool(self.activation(self.conv2(x)))
-        x = self.pool(self.activation(self.conv3(x)))
-        x = self.pool(self.activation(self.conv4(x)))
-        x = self.pool(self.activation(self.conv5(x)))
-        x = self.flatten(x)
-        x = self.activation(self.fc1(x))
-        x = self.dropout(x)
-        x = self.fc2(x)
+        x = self.block1(x)
+        x = self.block2(x)
+        x = self.block3(x)
+        x = self.classifier(x)
         return x
