@@ -17,7 +17,7 @@ dataset:
   parameters:
     root: /mnt/d/datasets/vindr-mammo/data/raw
     image_size: *image_size
-    augment_type: geometric
+    augment_type:
 
 dataloader:
   parameters:

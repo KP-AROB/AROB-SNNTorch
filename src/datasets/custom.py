@@ -14,11 +14,11 @@ from collections import Counter
 
 
 class CustomImageFolder(ImageFolder):
-    def __init__(self, root, image_size: int = 256, train: bool = True, augment_type: str = 'geometric'):
+    def __init__(self, root, image_size: int = 256, train: bool = True, augment_type: str = None):
         root = os.path.join(root, 'train' if train else 'test')
         super().__init__(root)
 
-        if augment_type not in ['geometric', 'photometric', 'all']:
+        if augment_type not in ['geometric', 'photometric', 'all', None]:
             raise ValueError('augment_type must be of {}'.format(augment_type))
 
         geometric_augmentation = [
