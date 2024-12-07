@@ -25,7 +25,7 @@ dataloader:
 
 experiment:
   name: SJellyExperiment
-  module_name: src.experiment.jellys
+  module_name: src.experiment.jelly
   parameters:
     num_epochs: 80
     lr: .0001

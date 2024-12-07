@@ -81,7 +81,6 @@ class SpikingMNET10(BaseJellyNet):
             layer.Conv2d(n_input, 16, k_size),
             neuron.LIFNode(surrogate_function=surrogate.ATan()),
             layer.BatchNorm2d(16),
-            layer.Dropout(0.05),
             layer.MaxPool2d(2)
         )
 
@@ -89,7 +88,6 @@ class SpikingMNET10(BaseJellyNet):
             layer.Conv2d(16, 32, k_size),
             neuron.LIFNode(surrogate_function=surrogate.ATan()),
             layer.BatchNorm2d(32),
-            layer.Dropout(0.05),
             layer.MaxPool2d(2)
         )
 
@@ -97,7 +95,6 @@ class SpikingMNET10(BaseJellyNet):
             layer.Conv2d(32, 64, k_size),
             neuron.LIFNode(surrogate_function=surrogate.ATan()),
             layer.BatchNorm2d(64),
-            layer.Dropout(0.05),
             layer.MaxPool2d(2)
         )
 
@@ -105,7 +102,6 @@ class SpikingMNET10(BaseJellyNet):
             layer.Conv2d(64, 64, k_size),
             neuron.LIFNode(surrogate_function=surrogate.ATan()),
             layer.BatchNorm2d(64),
-            layer.Dropout(0.05),
             layer.MaxPool2d(2)
         )
 

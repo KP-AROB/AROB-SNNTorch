@@ -1,10 +1,10 @@
 variables:
   image_size: &image_size 224
-  n_class: &n_class 3
+  n_class: &n_class 4
   n_input: &n_input 1
 
 model:
-  name: MNET10
+  name: CNN_F
   module_name: src.models.torch
   parameters:
     n_input: *n_input
@@ -15,7 +15,7 @@ dataset:
   name: CustomImageFolder
   module_name: src.datasets.custom
   parameters:
-    root: /mnt/d/datasets/vindr-mammo/data/raw
+    root: ../AROB-CBIS-DDSM-Preparation/data/scan-severity
     image_size: *image_size
     augment_type: all
 

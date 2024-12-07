@@ -110,3 +110,64 @@ class MNET10(nn.Module):
         x = self.block4(x)
         x = self.classifier(x)
         return x
+
+
+class CNN_F(nn.Module):
+    def __init__(self, n_input=3, n_output=4, in_size=224):
+        super(CNN_F, self).__init__()
+
+        self.n_input = n_input
+        self.n_output = n_output
+        self.in_size = in_size
+
+        self.block1 = nn.Sequential(
+            nn.Conv2d(n_input, 64, 11, stride=4, padding=0),
+            nn.LeakyReLU(),
+            nn.BatchNorm2d(64),
+            nn.MaxPool2d(2)
+        )
+
+        self.block2 = nn.Sequential(
+            nn.Conv2d(64, 256, 5, stride=1, padding=2),
+            nn.LeakyReLU(),
+            nn.BatchNorm2d(256),
+            nn.MaxPool2d(2)
+        )
+
+        self.block3 = nn.Sequential(
+            nn.Conv2d(256, 256, 3, stride=1, padding=1),
+            nn.LeakyReLU(),
+            nn.BatchNorm2d(256),
+        )
+
+        self.block4 = nn.Sequential(
+            nn.Conv2d(256, 256, 3, stride=1, padding=1),
+            nn.LeakyReLU(),
+            nn.BatchNorm2d(256),
+        )
+
+        self.block5 = nn.Sequential(
+            nn.Conv2d(256, 256, 3, stride=1, padding=1),
+            nn.LeakyReLU(),
+            nn.BatchNorm2d(256),
+            nn.MaxPool2d(2)
+        )
+
+        self.classifier = nn.Sequential(
+            nn.Flatten(),
+            nn.Linear(13 * 13 * 256, 4096),
+            nn.LeakyReLU(),
+            nn.Dropout(0.1),
+            nn.Linear(4096, 4096),
+            nn.LeakyReLU(),
+            nn.Dropout(0.1),
+            nn.Linear(4096, n_output)
+        )
+
+    def forward(self, x):
+        x = self.block1(x)
+        x = self.block2(x)
+        x = self.block3(x)
+        x = self.block4(x)
+        x = self.classifier(x)
+        return x
