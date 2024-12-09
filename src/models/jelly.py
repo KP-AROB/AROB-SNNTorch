@@ -166,22 +166,22 @@ class SimpleSpikingMNET(BaseJellyNet):
         n_input = input_shape[0]
 
         self.block1 = nn.Sequential(
-            layer.Conv2d(n_input, 16, k_size),
-            layer.BatchNorm2d(16),
+            layer.Conv2d(n_input, 8, k_size),
+            layer.BatchNorm2d(8),
             neuron.LIFNode(surrogate_function=surrogate.ATan()),
             layer.MaxPool2d(2)
         )
 
         self.block2 = nn.Sequential(
-            layer.Conv2d(16, 32, k_size),
-            layer.BatchNorm2d(32),
+            layer.Conv2d(8, 16, k_size),
+            layer.BatchNorm2d(16),
             neuron.LIFNode(surrogate_function=surrogate.ATan()),
             layer.MaxPool2d(2)
         )
 
         self.block3 = nn.Sequential(
-            layer.Conv2d(32, 64, k_size),
-            layer.BatchNorm2d(64),
+            layer.Conv2d(16, 32, k_size),
+            layer.BatchNorm2d(32),
             neuron.LIFNode(surrogate_function=surrogate.ATan()),
             layer.MaxPool2d(2)
         )
@@ -191,7 +191,7 @@ class SimpleSpikingMNET(BaseJellyNet):
 
         self.classifier = nn.Sequential(
             layer.Flatten(),
-            layer.Linear(26 * 26 * 64, 512),
+            layer.Linear(26 * 26 * 32, 512),
             neuron.LIFNode(surrogate_function=surrogate.ATan()),
             layer.Dropout(0.5),
             layer.Linear(512, self.n_output)

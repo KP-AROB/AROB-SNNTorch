@@ -75,7 +75,7 @@ class AbstractExperiment(ABC):
                              train_metrics, val_metrics, epoch, scalar_prefix)
             self.lr_scheduler.step(val_loss)
             self.early_stopping(self.model, epoch,
-                                val_metrics['acc'], self.writer.log_dir)
+                                val_metrics['val/acc'], self.writer.log_dir)
 
             logging.info(
                 f"Epoch {epoch+1} / {num_epochs} - LR : {self.lr_scheduler.get_last_lr()[0]:6f} Train/Val Acc: {train_metrics['train/acc']:.4f} | {val_metrics['val/acc']:4f}, Train/Val Loss: {train_loss:.4f} | {val_loss:4f}")
