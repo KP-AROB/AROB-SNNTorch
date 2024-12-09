@@ -63,6 +63,8 @@ class BaseJellyNet(nn.Module):
             return None
         elif self.encoding_method == 'poisson':
             return encoding.PoissonEncoder()
+        elif self.encoding_method == 'latency':
+            return encoding.LatencyEncoder()
 
 
 class ShallowCSNN(BaseJellyNet):

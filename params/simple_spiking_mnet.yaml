@@ -1,6 +1,6 @@
 variables:
   image_size: &image_size 224
-  n_class: &n_class 3
+  n_class: &n_class 4
   n_input: &n_input 1
 
 model:
@@ -9,20 +9,20 @@ model:
   parameters:
     input_shape: !!python/tuple [*n_input, *image_size, *image_size]
     n_output: *n_class
-    n_steps: 5
+    n_steps: 10
     encoding_method: 'poisson'
 
 dataset:
   name: CustomImageFolder
   module_name: src.datasets.custom
   parameters:
-    root: /media/nvidia/DATA/Data/prepared_breast_datasets/vindr/lesions/
+    root: ../AROB-Breast-Datasets/data/cbis/lesions-severity
     image_size: *image_size
-    augment_type:
+    augment_type: 
 
 dataloader:
   parameters:
-    batch_size: 128
+    batch_size: 32
 
 experiment:
   name: SJellyExperiment
