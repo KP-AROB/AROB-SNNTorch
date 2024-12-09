@@ -16,13 +16,13 @@ dataset:
   name: CustomImageFolder
   module_name: src.datasets.custom
   parameters:
-    root: /mnt/d/datasets/vindr-mammo/data/raw
+    root: /media/nvidia/DATA/Data/prepared_breast_datasets/vindr/lesions/
     image_size: *image_size
-    augment_type: all
+    augment_type:
 
 dataloader:
   parameters:
-    batch_size: 8
+    batch_size: 128
 
 experiment:
   name: SJellyExperiment

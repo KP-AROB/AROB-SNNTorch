@@ -15,9 +15,9 @@ dataset:
   name: CustomImageFolder
   module_name: src.datasets.custom
   parameters:
-    root: ../AROB-CBIS-DDSM-Preparation/data/scan-severity
+    root: /media/nvidia/DATA/Data/prepared_breast_datasets/vindr/lesions/
     image_size: *image_size
-    augment_type: all
+    augment_type: 
 
 dataloader:
   parameters:

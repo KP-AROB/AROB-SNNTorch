@@ -13,7 +13,7 @@ class EarlyStopping:
         self.early_stop = False
 
     def __call__(self, model: torch.nn.Module, epoch: int, val_acc: float, log_dir: str):
-        if self.best_acc is None or val_acc < self.best_acc - self.delta:
+        if self.best_acc is None or val_acc > self.best_acc - self.delta:
             self.best_acc = val_acc
             self.counter = 0
             checkpoint = {
