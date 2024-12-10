@@ -9,15 +9,15 @@ model:
   parameters:
     input_shape: !!python/tuple [*n_input, *image_size, *image_size]
     n_output: *n_class
-    n_steps: 10
+    n_steps: 5
     encoding_method: poisson
 dataset:
   name: CustomImageFolder
   module_name: src.datasets.custom
   parameters:
-    root: '/mnt/d/datasets/vindr-mammo/data/raw'
+    root: '/mnt/d/datasets/vindr-mammo/data/prepared'
     image_size: *image_size
-    augment_type: all
+    augment_type:
 
 dataloader:
   parameters:

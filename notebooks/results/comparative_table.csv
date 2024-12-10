@@ -1,2 +1,2 @@
 ,Model,Timesteps,Encoding Method,Input Shape,Test Accuracy
-0,SimpleSpikingMNET,5,poisson,"(1, 128, 128)",0.7007537484169006
+0,SimpleSpikingMNET,5,poisson,"(1, 128, 128)",0.6097561120986938
