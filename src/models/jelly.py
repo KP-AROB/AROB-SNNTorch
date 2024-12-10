@@ -55,7 +55,7 @@ class BaseJellyNet(nn.Module):
         return nn.Sequential(*layers)
 
     def get_encoder(self):
-        available_methods = ['IF', 'poisson']
+        available_methods = ['IF', 'poisson', 'latency']
         if self.encoding_method not in available_methods:
             raise ValueError(
                 'encoding_method must be of {}'.format(available_methods))
@@ -64,7 +64,14 @@ class BaseJellyNet(nn.Module):
         elif self.encoding_method == 'poisson':
             return encoding.PoissonEncoder()
         elif self.encoding_method == 'latency':
-            return encoding.LatencyEncoder()
+            return encoding.LatencyEncoder(T=self.n_steps)
+
+    def encode_input(self, x):
+        if self.encoder:
+            x = self.encoder(x)
+            if issubclass(type(self.encoder), encoding.StatefulEncoder):
+                functional.reset_net(self.encoder)
+        return x
 
 
 class ShallowCSNN(BaseJellyNet):
@@ -148,8 +155,7 @@ class SpikingMNET10(BaseJellyNet):
 
     def forward(self, x):
         x = x.unsqueeze(0).repeat(self.n_steps, 1, 1, 1, 1)
-        if self.encoder:
-            x = self.encoder(x)
+        x = self.encode_input(x)
         x = self.net(x)
         x = self.classifier(x)
         x = x.mean(0)
@@ -171,6 +177,7 @@ class SimpleSpikingMNET(BaseJellyNet):
             layer.Conv2d(n_input, 8, k_size),
             layer.BatchNorm2d(8),
             neuron.LIFNode(surrogate_function=surrogate.ATan()),
+            layer.Dropout(0.01),
             layer.MaxPool2d(2)
         )
 
@@ -178,6 +185,7 @@ class SimpleSpikingMNET(BaseJellyNet):
             layer.Conv2d(8, 16, k_size),
             layer.BatchNorm2d(16),
             neuron.LIFNode(surrogate_function=surrogate.ATan()),
+            layer.Dropout(0.01),
             layer.MaxPool2d(2)
         )
 
@@ -185,6 +193,7 @@ class SimpleSpikingMNET(BaseJellyNet):
             layer.Conv2d(16, 32, k_size),
             layer.BatchNorm2d(32),
             neuron.LIFNode(surrogate_function=surrogate.ATan()),
+            layer.Dropout(0.01),
             layer.MaxPool2d(2)
         )
 
@@ -203,8 +212,7 @@ class SimpleSpikingMNET(BaseJellyNet):
 
     def forward(self, x):
         x = x.unsqueeze(0).repeat(self.n_steps, 1, 1, 1, 1)
-        if self.encoder:
-            x = self.encoder(x)
+        x = self.encode_input(x)
         x = self.net(x)
         x = self.classifier(x)
         x = x.mean(0)

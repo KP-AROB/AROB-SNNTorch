@@ -1,6 +1,6 @@
 variables:
   image_size: &image_size 224
-  n_class: &n_class 4
+  n_class: &n_class 3
   n_input: &n_input 1
 
 model:
@@ -9,16 +9,15 @@ model:
   parameters:
     input_shape: !!python/tuple [*n_input, *image_size, *image_size]
     n_output: *n_class
-    n_steps: 10
-    encoding_method: 'poisson'
-
+    n_steps: 5
+    encoding_method: latency
 dataset:
   name: CustomImageFolder
   module_name: src.datasets.custom
   parameters:
-    root: ../AROB-Breast-Datasets/data/cbis/lesions-severity
+    root: '/mnt/d/datasets/vindr-mammo/data/raw'
     image_size: *image_size
-    augment_type: 
+    augment_type: all
 
 dataloader:
   parameters:
@@ -28,7 +27,7 @@ experiment:
   name: SJellyExperiment
   module_name: src.experiment.jelly
   parameters:
-    num_epochs: 80
+    num_epochs: 60
     lr: .0001
     weight_decay: 0
     seed: 1234

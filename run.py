@@ -81,8 +81,6 @@ if __name__ == "__main__":
 
     model = instantiate_cls(
         params['model']['module_name'], params['model']['name'], model_params)
-    logging.info(f"Model - {model}")
-
     model.to(DEVICE)
 
     # ========== TRAINING ========== ##
