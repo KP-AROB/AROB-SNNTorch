@@ -10,7 +10,7 @@ model:
     input_shape: !!python/tuple [*n_input, *image_size, *image_size]
     n_output: *n_class
     n_steps: 5
-    encoding_method: latency
+    encoding_method: phase
 dataset:
   name: CustomImageFolder
   module_name: src.datasets.custom

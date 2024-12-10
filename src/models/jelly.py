@@ -55,7 +55,7 @@ class BaseJellyNet(nn.Module):
         return nn.Sequential(*layers)
 
     def get_encoder(self):
-        available_methods = ['IF', 'poisson', 'latency']
+        available_methods = ['IF', 'poisson', 'latency', 'phase']
         if self.encoding_method not in available_methods:
             raise ValueError(
                 'encoding_method must be of {}'.format(available_methods))
@@ -65,6 +65,8 @@ class BaseJellyNet(nn.Module):
             return encoding.PoissonEncoder()
         elif self.encoding_method == 'latency':
             return encoding.LatencyEncoder(T=self.n_steps)
+        elif self.encoding_method == 'phase':
+            return encoding.WeightedPhaseEncoder(K=self.n_steps)
 
     def encode_input(self, x):
         if self.encoder:
