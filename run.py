@@ -97,7 +97,8 @@ if __name__ == "__main__":
             "log_interval": log_interval,
             "lr": xp_params['lr'],
             "weight_decay": xp_params['weight_decay'],
-            "early_stopping_patience": xp_params['early_stopping_patience']
+            "early_stopping_patience": xp_params['early_stopping_patience'],
+            'param_obj': params
         }
     )
 

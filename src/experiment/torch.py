@@ -6,9 +6,9 @@ import torch
 
 
 class CNNExperiment(AbstractExperiment):
-    def __init__(self, model: nn.Module, writer: SummaryWriter, log_interval: int, lr: float, early_stopping_patience: int, weight_decay: float):
+    def __init__(self, model: nn.Module, writer: SummaryWriter, log_interval: int, lr: float, early_stopping_patience: int, weight_decay: float, param_obj: dict):
         super().__init__(model, writer, log_interval,
-                         lr, early_stopping_patience, weight_decay)
+                         lr, early_stopping_patience, weight_decay, param_obj)
 
         if self.model.n_output == 2:
             self.criterion = nn.BCELoss()

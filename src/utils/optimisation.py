@@ -1,16 +1,18 @@
 import torch
 import logging
 import os
+from src.models.jelly import BaseJellyNet
 
 
 class EarlyStopping:
-    def __init__(self, patience=5, delta=0, verbose=True):
+    def __init__(self, patience=5, delta=0, verbose=True, param_obj: dict = {}):
         self.patience = patience
         self.delta = delta
         self.verbose = verbose
         self.counter = 0
         self.best_acc = None
         self.early_stop = False
+        self.param_obj = param_obj
 
     def __call__(self, model: torch.nn.Module, epoch: int, val_acc: float, log_dir: str):
         if self.best_acc is None or val_acc > self.best_acc - self.delta:
@@ -19,7 +21,8 @@ class EarlyStopping:
             checkpoint = {
                 'net': model.state_dict(),
                 'epoch': epoch,
-                'max_test_acc': self.best_acc
+                'max_test_acc': self.best_acc,
+                'params': self.param_obj
             }
             torch.save(checkpoint, os.path.join(log_dir, 'best_model.pth'))
         else:

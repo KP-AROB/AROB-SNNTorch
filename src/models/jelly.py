@@ -204,7 +204,7 @@ class SimpleSpikingMNET(BaseJellyNet):
 
         self.classifier = nn.Sequential(
             layer.Flatten(),
-            layer.Linear(26 * 26 * 32, 512),
+            layer.Linear(14 * 14 * 32, 512),
             neuron.LIFNode(surrogate_function=surrogate.ATan()),
             layer.Dropout(0.5),
             layer.Linear(512, self.n_output)

@@ -8,9 +8,9 @@ from torch.utils.tensorboard import SummaryWriter
 
 
 class SJellyExperiment(AbstractExperiment):
-    def __init__(self, model: torch.nn.Module, writer: SummaryWriter, log_interval: int, lr: float, early_stopping_patience: int, weight_decay: float):
+    def __init__(self, model: torch.nn.Module, writer: SummaryWriter, log_interval: int, lr: float, early_stopping_patience: int, weight_decay: float, param_obj: dict):
         super().__init__(model, writer, log_interval,
-                         lr, early_stopping_patience, weight_decay)
+                         lr, early_stopping_patience, weight_decay, param_obj)
         self.optimizer = torch.optim.Adam(
             self.model.parameters(),
             lr=lr,

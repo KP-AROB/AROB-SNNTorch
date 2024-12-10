@@ -13,12 +13,13 @@ import torch.optim as optim
 
 class AbstractExperiment(ABC):
 
-    def __init__(self, model: torch.nn.Module, writer: SummaryWriter, log_interval: int, lr: float, early_stopping_patience: int = 5, weight_decay: float = 0) -> None:
+    def __init__(self, model: torch.nn.Module, writer: SummaryWriter, log_interval: int, lr: float, early_stopping_patience: int = 5, weight_decay: float = 0, param_obj: dict = {}) -> None:
         super().__init__()
         self.model = model
         self.writer = writer
         self.log_interval = log_interval
         self.lr = lr
+        self.param_obj = param_obj
         self.weight_decay = weight_decay
         self.early_stopping_patience = early_stopping_patience
         self.device = torch.device(
@@ -33,7 +34,7 @@ class AbstractExperiment(ABC):
             'specificity': Specificity(task=metric_task, num_classes=self.model.n_output),
         }
         self.early_stopping = EarlyStopping(
-            patience=early_stopping_patience, verbose=True)
+            patience=early_stopping_patience, verbose=True, param_obj=self.param_obj)
 
         self.optimizer = optim.Adam(
             self.model.parameters(), lr=self.lr, weight_decay=self.weight_decay)
