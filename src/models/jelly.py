@@ -103,7 +103,94 @@ class ShallowCSNN(BaseJellyNet):
         return x
 
 
+class VGG19(BaseJellyNet):
+    def __init__(self,
+                 input_shape=(1, 224, 224),
+                 n_output=10,
+                 n_steps=5,
+                 encoding_method='IF'):
+        super().__init__(input_shape, n_output, n_steps, encoding_method)
+
+        cfg = [64, 'M', 128, 'M', 256, 256, 'M', 512, 512, 'M', 512, 512, 'M']
+
+        self.net = self.make_layers(cfg, 3)
+        self.classifier = nn.Sequential(
+            layer.Flatten(),
+            layer.Linear(self.feature_map_size, self.n_output),
+        )
+        functional.set_step_mode(self, step_mode='m')
+
+    def forward(self, x):
+        x = x.unsqueeze(0).repeat(self.n_steps, 1, 1, 1, 1)
+        x = self.encode_input(x)
+        x = self.net(x)
+        x = self.classifier(x)
+        x = x.mean(0)
+        return x
+
+
 class SpikingMNET10(BaseJellyNet):
+    def __init__(self,
+                 input_shape=(1, 224, 224),
+                 n_output=10,
+                 n_steps=5,
+                 encoding_method='IF'):
+        super().__init__(input_shape, n_output, n_steps, encoding_method)
+
+        k_size = 3
+        n_input = input_shape[0]
+
+        self.block1 = nn.Sequential(
+            layer.Conv2d(n_input, 16, k_size),
+            layer.BatchNorm2d(16),
+            neuron.LIFNode(surrogate_function=surrogate.ATan()),
+            layer.MaxPool2d(2)
+        )
+
+        self.block2 = nn.Sequential(
+            layer.Conv2d(16, 32, k_size),
+            layer.BatchNorm2d(32),
+            neuron.LIFNode(surrogate_function=surrogate.ATan()),
+            layer.MaxPool2d(2)
+        )
+
+        self.block3 = nn.Sequential(
+            layer.Conv2d(32, 64, k_size),
+            layer.BatchNorm2d(64),
+            neuron.LIFNode(surrogate_function=surrogate.ATan()),
+            layer.MaxPool2d(2)
+        )
+
+        self.block4 = nn.Sequential(
+            layer.Conv2d(64, 64, k_size),
+            layer.BatchNorm2d(64),
+            neuron.LIFNode(surrogate_function=surrogate.ATan()),
+            layer.MaxPool2d(2)
+        )
+
+        self.net = nn.Sequential(
+            self.block1, self.block2, self.block3, self.block4)
+
+        self.classifier = nn.Sequential(
+            layer.Flatten(),
+            layer.Linear(12 * 12 * 64, 1024),
+            neuron.LIFNode(surrogate_function=surrogate.ATan()),
+            layer.Dropout(0.5),
+            layer.Linear(1024, self.n_output)
+        )
+
+        functional.set_step_mode(self, step_mode='m')
+
+    def forward(self, x):
+        x = x.unsqueeze(0).repeat(self.n_steps, 1, 1, 1, 1)
+        x = self.encode_input(x)
+        x = self.net(x)
+        x = self.classifier(x)
+        x = x.mean(0)
+        return x
+
+
+class SimpleSpikingMNET(BaseJellyNet):
     def __init__(self,
                  input_shape=(1, 224, 224),
                  n_output=10,
@@ -149,64 +236,6 @@ class SpikingMNET10(BaseJellyNet):
             layer.Flatten(),
             layer.Linear(12 * 12 * 64, 512),
             neuron.LIFNode(surrogate_function=surrogate.ATan()),
-            layer.Dropout(0.5),
-            layer.Linear(512, self.n_output)
-        )
-
-        functional.set_step_mode(self, step_mode='m')
-
-    def forward(self, x):
-        x = x.unsqueeze(0).repeat(self.n_steps, 1, 1, 1, 1)
-        x = self.encode_input(x)
-        x = self.net(x)
-        x = self.classifier(x)
-        x = x.mean(0)
-        return x
-
-
-class SimpleSpikingMNET(BaseJellyNet):
-    def __init__(self,
-                 input_shape=(1, 224, 224),
-                 n_output=10,
-                 n_steps=5,
-                 encoding_method='IF'):
-        super().__init__(input_shape, n_output, n_steps, encoding_method)
-
-        k_size = 3
-        n_input = input_shape[0]
-
-        self.block1 = nn.Sequential(
-            layer.Conv2d(n_input, 8, k_size),
-            layer.BatchNorm2d(8),
-            neuron.LIFNode(surrogate_function=surrogate.ATan()),
-            layer.Dropout(0.01),
-            layer.MaxPool2d(2)
-        )
-
-        self.block2 = nn.Sequential(
-            layer.Conv2d(8, 16, k_size),
-            layer.BatchNorm2d(16),
-            neuron.LIFNode(surrogate_function=surrogate.ATan()),
-            layer.Dropout(0.01),
-            layer.MaxPool2d(2)
-        )
-
-        self.block3 = nn.Sequential(
-            layer.Conv2d(16, 32, k_size),
-            layer.BatchNorm2d(32),
-            neuron.LIFNode(surrogate_function=surrogate.ATan()),
-            layer.Dropout(0.01),
-            layer.MaxPool2d(2)
-        )
-
-        self.net = nn.Sequential(
-            self.block1, self.block2, self.block3)
-
-        self.classifier = nn.Sequential(
-            layer.Flatten(),
-            layer.Linear(26 * 26 * 32, 512),
-            neuron.LIFNode(surrogate_function=surrogate.ATan()),
-            layer.Dropout(0.5),
             layer.Linear(512, self.n_output)
         )
 

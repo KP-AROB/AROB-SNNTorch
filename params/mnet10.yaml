@@ -32,5 +32,4 @@ experiment:
     weight_decay: 0
     seed: 1234
     log_dir: ./logs
-    k_fold: 0
     early_stopping_patience: 20

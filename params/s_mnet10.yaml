@@ -4,34 +4,33 @@ variables:
   n_input: &n_input 1
 
 model:
-  name: SpikingMNET10
+  name: VGG19
   module_name: src.models.jelly
   parameters:
     input_shape: !!python/tuple [*n_input, *image_size, *image_size]
     n_output: *n_class
-    n_steps: 10
-    encoding_method: 'IF'
+    n_steps: 5
+    encoding_method: poisson
 
 dataset:
   name: CustomImageFolder
   module_name: src.datasets.custom
   parameters:
-    root: /mnt/d/datasets/vindr-mammo/data/raw
+    root: /mnt/d/datasets/Vindr/prepared/vindr/birads
     image_size: *image_size
-    augment_type: all
+    augment_type:
 
 dataloader:
   parameters:
-    batch_size: 32
+    batch_size: 16
 
 experiment:
   name: SJellyExperiment
   module_name: src.experiment.jelly
   parameters:
-    num_epochs: 80
+    num_epochs: 40
     lr: .0001
     weight_decay: 0
     seed: 1234
     log_dir: ./logs
-    k_fold: 0
-    early_stopping_patience: 20
+    early_stopping_patience: 5

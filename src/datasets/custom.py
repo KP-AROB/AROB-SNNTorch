@@ -42,7 +42,6 @@ class CustomImageFolder(ImageFolder):
             *(geometric_augmentation if train and augment_type == 'geometric' else []),
             *(photometric_augmentation if train and augment_type ==
               'photometric' else []),
-            transforms.Normalize((0.28), (0.23))
         ])
 
         class_counter = Counter(self.targets)

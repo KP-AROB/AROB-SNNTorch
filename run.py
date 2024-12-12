@@ -10,10 +10,6 @@ from torch.utils.tensorboard import SummaryWriter
 from uuid import uuid4
 from src.utils.parameters import write_params_to_file, load_parameters, instantiate_cls
 from src.experiment.base import AbstractExperiment
-from sklearn.model_selection import KFold
-import numpy as np
-from torch.utils.data import Subset, WeightedRandomSampler, DataLoader
-from sklearn.utils.class_weight import compute_class_weight
 from torchvision import transforms
 
 if __name__ == "__main__":
@@ -87,7 +83,6 @@ if __name__ == "__main__":
 
     writer = SummaryWriter(log_dir=log_dir, flush_secs=60)
 
-    logging.info(f'Running on device : {DEVICE}')
     experiment: AbstractExperiment = instantiate_cls(
         params['experiment']['module_name'],
         params['experiment']['name'],
@@ -102,32 +97,11 @@ if __name__ == "__main__":
         }
     )
 
-    if xp_params['k_fold'] > 1:
-        kf = KFold(n_splits=xp_params['k_fold'], shuffle=True, random_state=42)
-        for fold, (train_idx, val_idx) in enumerate(kf.split(np.arange(len(train_dataset)))):
-            logging.info(f"Fold {fold+1}/{kf.get_n_splits()}")
-            train_subset = Subset(train_dataset, train_idx)
-            val_subset = Subset(train_dataset, val_idx)
+    logging.info(f'Running on device : {DEVICE}')
 
-            targets = np.array([train_dataset.targets[i] for i in train_idx])
-            class_weights = compute_class_weight(
-                'balanced', classes=np.unique(targets), y=targets)
-            class_weights = torch.tensor(class_weights, dtype=torch.float)
+    train_dl, val_dl = create_dataloaders(
+        train_dataset,
+        val_dataset,
+        params['dataloader']['parameters'])
 
-            sample_weights = class_weights[targets]
-            sampler = WeightedRandomSampler(
-                sample_weights, num_samples=len(sample_weights), replacement=True)
-
-            train_dl = DataLoader(
-                train_subset, batch_size=params['dataloader']['parameters']['batch_size'], sampler=sampler)
-            val_dl = DataLoader(
-                val_subset, batch_size=params['dataloader']['parameters']['batch_size'], shuffle=False)
-
-            experiment.fit(train_dl, val_dl, xp_params['num_epochs'], fold)
-    else:
-        train_dl, val_dl = create_dataloaders(
-            train_dataset,
-            val_dataset,
-            params['dataloader']['parameters'])
-
-        experiment.fit(train_dl, val_dl, xp_params['num_epochs'])
+    experiment.fit(train_dl, val_dl, xp_params['num_epochs'])

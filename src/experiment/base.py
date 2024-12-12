@@ -51,7 +51,8 @@ class AbstractExperiment(ABC):
     def compute_metrics(self, preds, targets, mode):
         val_results = {}
         for name, metric in self.metrics.items():
-            outputs = torch.argmax(preds, dim=1) if name == 'acc' else preds
+            outputs = torch.argmax(
+                preds, dim=1) if name == 'acc' or self.model.n_output == 2 else preds
             val_results[f'{mode}/{name}'] = metric(outputs, targets)
         return val_results
 
@@ -64,8 +65,7 @@ class AbstractExperiment(ABC):
             self.writer.add_scalar(val_name, val_metric_value, epoch)
         return
 
-    def fit(self, train_loader, val_loader, num_epochs, fold=None):
-        scalar_prefix = f'fold_{fold}' if fold else None
+    def fit(self, train_loader, val_loader, num_epochs):
         with open(self.writer.log_dir + '/parameters.txt', "a") as file:
             file.write(f"\n{self.model}\n")
 
@@ -73,13 +73,13 @@ class AbstractExperiment(ABC):
             train_loss, train_metrics = self.train(train_loader)
             val_loss, val_metrics = self.test(val_loader)
             self.log_metrics(train_loss, val_loss,
-                             train_metrics, val_metrics, epoch, scalar_prefix)
+                             train_metrics, val_metrics, epoch, None)
             self.lr_scheduler.step(val_loss)
             self.early_stopping(self.model, epoch,
                                 val_metrics['val/acc'], self.writer.log_dir)
 
             logging.info(
-                f"Epoch {epoch+1} / {num_epochs} - LR : {self.lr_scheduler.get_last_lr()[0]:6f} Train/Val Acc: {train_metrics['train/acc']:.4f} | {val_metrics['val/acc']:4f}, Train/Val Loss: {train_loss:.4f} | {val_loss:4f}")
+                f"Epoch {epoch+1} / {num_epochs} - LR : {self.lr_scheduler.get_last_lr()[0]:6f} T/V Acc: {train_metrics['train/acc']:.4f} | {val_metrics['val/acc']:.4f}, T/V AUROC: {train_metrics['train/auroc']:.4f} | {val_metrics['val/auroc']:4f}, T/V Loss: {train_loss:.4f} | {val_loss:4f}")
 
             if self.early_stopping.early_stop:
                 logging.info(
