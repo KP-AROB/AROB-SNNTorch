@@ -83,6 +83,11 @@ if __name__ == "__main__":
 
     writer = SummaryWriter(log_dir=log_dir, flush_secs=60)
 
+    train_dl, val_dl = create_dataloaders(
+        train_dataset,
+        val_dataset,
+        params['dataloader']['parameters'])
+
     experiment: AbstractExperiment = instantiate_cls(
         params['experiment']['module_name'],
         params['experiment']['name'],
@@ -98,10 +103,5 @@ if __name__ == "__main__":
     )
 
     logging.info(f'Running on device : {DEVICE}')
-
-    train_dl, val_dl = create_dataloaders(
-        train_dataset,
-        val_dataset,
-        params['dataloader']['parameters'])
 
     experiment.fit(train_dl, val_dl, xp_params['num_epochs'])

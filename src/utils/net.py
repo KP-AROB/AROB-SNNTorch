@@ -11,8 +11,7 @@ def make_vgg_conv_block(cfg, n_input):
         else:
             layers += [nn.Conv2d(in_channels, x, kernel_size=3, padding=1),
                        nn.BatchNorm2d(x),
-                       nn.ReLU()
+                       nn.LeakyReLU()
                        ]
             in_channels = x
-    layers += [nn.Flatten()]
     return nn.Sequential(*layers)

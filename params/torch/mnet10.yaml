@@ -1,10 +1,10 @@
 variables:
   image_size: &image_size 224
-  n_class: &n_class 4
+  n_class: &n_class 3
   n_input: &n_input 1
 
 model:
-  name: CNN_F
+  name: MNET10
   module_name: src.models.torch
   parameters:
     n_input: *n_input
@@ -15,9 +15,10 @@ dataset:
   name: CustomImageFolder
   module_name: src.datasets.custom
   parameters:
-    root: /media/nvidia/DATA/Data/prepared_breast_datasets/vindr/lesions/
+    root: /mnt/d/datasets/Vindr/prepared/lesions_fused_cbis
     image_size: *image_size
-    augment_type: 
+    augment_type: all
+    noise: False
 
 dataloader:
   parameters:

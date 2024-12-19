@@ -34,7 +34,7 @@ class AbstractExperiment(ABC):
             'specificity': Specificity(task=metric_task, num_classes=self.model.n_output),
         }
         self.early_stopping = EarlyStopping(
-            patience=early_stopping_patience, verbose=True, param_obj=self.param_obj)
+            patience=early_stopping_patience, verbose=False, param_obj=self.param_obj)
 
         self.optimizer = optim.Adam(
             self.model.parameters(), lr=self.lr, weight_decay=self.weight_decay)

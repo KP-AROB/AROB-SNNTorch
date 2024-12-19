@@ -4,33 +4,33 @@ variables:
   n_input: &n_input 1
 
 model:
-  name: VGG19
+  name: ShallowCSNN
   module_name: src.models.jelly
   parameters:
     input_shape: !!python/tuple [*n_input, *image_size, *image_size]
     n_output: *n_class
     n_steps: 5
-    encoding_method: poisson
-
+    encoding_method: IF
 dataset:
   name: CustomImageFolder
   module_name: src.datasets.custom
   parameters:
-    root: /mnt/d/datasets/Vindr/prepared/vindr/birads
+    root: /mnt/d/datasets/Vindr/prepared/lesions
     image_size: *image_size
-    augment_type:
+    augment_type: all
+    noise: False
 
 dataloader:
   parameters:
-    batch_size: 16
+    batch_size: 32
 
 experiment:
   name: SJellyExperiment
   module_name: src.experiment.jelly
   parameters:
-    num_epochs: 40
+    num_epochs: 50
     lr: .0001
     weight_decay: 0
-    seed: 1234
+    seed: 1231
     log_dir: ./logs
-    early_stopping_patience: 5
+    early_stopping_patience: 50

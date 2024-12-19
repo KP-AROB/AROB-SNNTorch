@@ -4,17 +4,31 @@ import os
 import logging
 from monai.transforms import *
 from collections import Counter
-
+from torchvision.transforms.v2 import GaussianNoise
 from torchvision import transforms
 from torchvision.datasets import ImageFolder
 import os
 import logging
 from monai.transforms import *
 from collections import Counter
+import torch
+
+
+class AddGaussianNoise(object):
+    def __init__(self, mean=0.0, std=1.0):
+        self.mean = mean
+        self.std = std
+
+    def __call__(self, tensor):
+        noise = torch.randn(tensor.size()) * self.std + self.mean
+        return tensor + noise
+
+    def __repr__(self):
+        return f"{self.__class__.__name__}(mean={self.mean}, std={self.std})"
 
 
 class CustomImageFolder(ImageFolder):
-    def __init__(self, root, image_size: int = 224, train: bool = True, augment_type: str = None):
+    def __init__(self, root, image_size: int = 224, train: bool = True, augment_type: str = None, noise: bool = False):
         root = os.path.join(root, 'train' if train else 'test')
         super().__init__(root)
 
@@ -25,7 +39,7 @@ class CustomImageFolder(ImageFolder):
             transforms.RandomHorizontalFlip(p=0.3),
             transforms.RandomVerticalFlip(p=0.3),
             transforms.RandomApply(
-                transforms=[transforms.RandomRotation(90)], p=0.3),
+                transforms=[transforms.RandomRotation(45)], p=0.3),
         ]
 
         photometric_augmentation = [
